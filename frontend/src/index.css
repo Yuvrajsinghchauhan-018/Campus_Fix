@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  
+  body {
+    @apply transition-colors duration-300 ease-in-out;
+    @apply bg-lightBg text-lightText;
+  }
+
+  .dark body {
+    @apply bg-darkBg text-darkText;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply py-2 px-4 bg-blue-600 text-white rounded-lg font-medium shadow-sm hover:shadow-md hover:scale-[1.03] transition-all;
+  }
+  
+  .card {
+    @apply bg-white border border-slate-200 rounded-xl shadow-sm transition-colors duration-300;
+  }
+  
+  .dark .card {
+    @apply bg-darkCard border-darkBorder;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors duration-300 bg-white text-slate-800;
+  }
+
+  .dark .input-field {
+    @apply border-darkBorder bg-darkCard text-white;
+  }
+}
