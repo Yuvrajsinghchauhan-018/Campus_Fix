@@ -23,13 +23,12 @@ const OTPStoreSchema = new mongoose.Schema({
 });
 
 // Hash OTP before saving
-OTPStoreSchema.pre('save', async function(next) {
+OTPStoreSchema.pre('save', async function() {
   if (!this.isModified('otp')) {
-    return next();
+    return;
   }
   const salt = await bcrypt.genSalt(10);
   this.otp = await bcrypt.hash(this.otp, salt);
-  next();
 });
 
 // Method to check OTP
