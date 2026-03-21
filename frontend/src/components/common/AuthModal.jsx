@@ -141,7 +141,7 @@ const AuthModal = ({ isOpen, onClose, role }) => {
           setTimer(30);
         } else if (res.token) {
           onClose();
-          navigate(`/${role}`);
+          navigate(`/${role}`, { replace: true });
         }
       } else {
         const res = await register({ ...formData, role: role.toLowerCase() });
