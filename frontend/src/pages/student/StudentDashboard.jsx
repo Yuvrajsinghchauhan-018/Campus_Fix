@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import NewComplaint from './NewComplaint';
 import ComplaintDetail from "../../components/common/ComplaintDetail";
 import NotificationList from "../../components/common/NotificationList";
+import ComplaintHistory from './ComplaintHistory';
 
 const Sidebar = () => {
   const { logout } = useAuth();
@@ -26,9 +27,9 @@ const Sidebar = () => {
            <Link to="/student/new" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/student/new' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <PlusCircle className="w-5 h-5" /> Submit Issue
            </Link>
-           <a href="/student#history" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800`}>
+           <Link to="/student/history" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/student/history' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <FileText className="w-5 h-5" /> My Complaints
-           </a>
+           </Link>
         </nav>
       </div>
       <div className="mt-auto p-6 border-t border-slate-200 dark:border-darkBorder">
@@ -100,9 +101,9 @@ const DashboardHome = () => {
             <Link to="/student/new" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                <PlusCircle className="w-5 h-5"/> New Issue
             </Link>
-            <a href="#history" className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2">
+            <Link to="/student/history" className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2">
                View All History
-            </a>
+            </Link>
          </div>
       </div>
 
@@ -164,6 +165,7 @@ const StudentMain = () => {
         <Routes>
           <Route path="" element={<DashboardHome />} />
           <Route path="new" element={<NewComplaint />} />
+          <Route path="history" element={<ComplaintHistory />} />
           <Route path="complaint/:id" element={<ComplaintDetail />} />
           <Route path="notifications" element={<NotificationList />} />
         </Routes>

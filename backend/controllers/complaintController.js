@@ -11,7 +11,7 @@ exports.createComplaint = async (req, res) => {
     let photos = [];
     
     if (req.files && req.files.length > 0) {
-      photos = req.files.map(file => file.path);
+      photos = req.files.map(file => file.path || `https://via.placeholder.com/600x400?text=Local+Upload+Ignored`);
     }
 
     const aiResult = await analyzeComplaint(title, description);
@@ -130,7 +130,7 @@ exports.updateStatus = async (req, res) => {
 exports.resolveComplaint = async (req, res) => {
   try {
     const { resolutionNote } = req.body;
-    let completionPhoto = req.file ? req.file.path : null;
+    let completionPhoto = req.file ? (req.file.path || `https://via.placeholder.com/600x400?text=Local+Upload+Ignored`) : null;
     
     let complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
