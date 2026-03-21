@@ -1,9 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode } from 'lucide-react';
+import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, LayoutDashboard, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '../../context/AuthContext';
+
+const Sidebar = () => {
+  const { logout } = useAuth();
+  const location = useLocation();
+
+  return (
+    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-darkBorder hidden md:flex flex-col shrink-0 min-h-[calc(100vh-4rem)] sticky top-16">
+      <div className="p-6">
+        <h2 className="text-xl font-bold font-jakarta mb-8 text-slate-800 dark:text-white">Authority Panel</h2>
+        <nav className="flex flex-col gap-2">
+           <Link to="/authority" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <LayoutDashboard className="w-5 h-5" /> Dashboard Overview
+           </Link>
+           <Link to="/authority/queue" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/queue' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <AlertTriangle className="w-5 h-5" /> Complaints Queue
+           </Link>
+           <Link to="/authority/approvals" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/approvals' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <Users className="w-5 h-5" /> Maintainer Approvals
+           </Link>
+           <Link to="/authority/reports" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/reports' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <FileText className="w-5 h-5" /> PDF Reports
+           </Link>
+           <Link to="/authority/qr" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/qr' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <QrCode className="w-5 h-5" /> Generate QR Node
+           </Link>
+        </nav>
+      </div>
+      <div className="mt-auto p-6 border-t border-slate-200 dark:border-darkBorder">
+         <button onClick={logout} className="p-3 w-full rounded-lg flex items-center gap-3 font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            <LogOut className="w-5 h-5" /> Logout
+         </button>
+      </div>
+    </aside>
+  );
+};
 
 // 1. Dashboard Home (Stats & Charts)
 const DashboardHome = () => {
@@ -24,75 +60,61 @@ const DashboardHome = () => {
     fetchData();
   }, []);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#ffc658', '#ef5350'];
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
-  if(!summary) return <div className="p-8 text-center animate-pulse">Loading Analytics...</div>;
+  if(!summary) return <div className="p-8 text-center animate-pulse text-slate-500">Loading Operations Data...</div>;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in">
-      <h1 className="text-2xl md:text-3xl font-jakarta font-bold mb-6">Authority Dashboard</h1>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-jakarta font-bold text-slate-800 dark:text-white mb-2">Authority Dashboard</h1>
+          <p className="text-slate-500 dark:text-slate-400">Holistic overview of campus maintenance health.</p>
+        </div>
+      </div>
       
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="card p-6 flex flex-col justify-between">
-           <p className="text-sm text-slate-500 font-medium font-jakarta">Total Complaints</p>
-           <h3 className="text-4xl font-bold mt-2">{summary.total}</h3>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="card p-6 border-l-[6px] border-l-slate-700 bg-white dark:bg-slate-900 shadow-sm rounded-xl">
+           <p className="text-sm text-slate-500 font-medium font-jakarta mb-1">Total Complaints</p>
+           <h3 className="text-4xl font-bold mt-2 text-slate-800 dark:text-white">{summary.total}</h3>
         </div>
-        <div className="card p-6 flex flex-col justify-between">
-           <p className="text-sm text-slate-500 font-medium font-jakarta">Pending</p>
-           <h3 className="text-4xl font-bold mt-2 text-yellow-600">{summary.pendingCount}</h3>
+        <div className="card p-6 border-l-[6px] border-l-yellow-500 bg-white dark:bg-slate-900 shadow-sm rounded-xl">
+           <p className="text-sm text-slate-500 font-medium font-jakarta mb-1">Pending Action</p>
+           <h3 className="text-4xl font-bold mt-2 text-yellow-600 dark:text-yellow-400">{summary.pendingCount}</h3>
         </div>
-        <div className="card p-6 flex flex-col justify-between">
-           <p className="text-sm text-slate-500 font-medium font-jakarta">Resolution Rate</p>
-           <h3 className="text-4xl font-bold mt-2 text-green-600">{summary.resolvedPercentage.toFixed(1)}%</h3>
+        <div className="card p-6 border-l-[6px] border-l-green-500 bg-white dark:bg-slate-900 shadow-sm rounded-xl">
+           <p className="text-sm text-slate-500 font-medium font-jakarta mb-1">Resolution Rate</p>
+           <h3 className="text-4xl font-bold mt-2 text-green-600 dark:text-green-400">{summary.resolvedPercentage.toFixed(1)}%</h3>
         </div>
-        <div className="card p-6 flex flex-col justify-between">
-           <p className="text-sm text-slate-500 font-medium font-jakarta">Avg Fix Time</p>
-           <h3 className="text-4xl font-bold mt-2 text-blue-600">{summary.avgResolutionTime}h</h3>
+        <div className="card p-6 border-l-[6px] border-l-blue-500 bg-white dark:bg-slate-900 shadow-sm rounded-xl">
+           <p className="text-sm text-slate-500 font-medium font-jakarta mb-1">Avg Fix Time</p>
+           <h3 className="text-4xl font-bold mt-2 text-blue-600 dark:text-blue-400">{summary.avgResolutionTime}h</h3>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8 mb-8">
-        <div className="card p-6 h-96">
-          <h3 className="font-bold mb-4">Complaints by Category</h3>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="card p-6 lg:p-8 h-[400px] shadow-sm rounded-xl border border-slate-100 dark:border-slate-800">
+          <h3 className="font-bold mb-6 text-slate-800 dark:text-white text-lg">Complaints by Category</h3>
+          <ResponsiveContainer width="100%" height="85%">
             <BarChart data={catData}>
-              <XAxis dataKey="name" stroke="#8884d8" />
-              <YAxis />
-              <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '8px'}}/>
-              <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}}/>
+              <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="card p-6 h-96">
-          <h3 className="font-bold mb-4">Category Distribution</h3>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="card p-6 lg:p-8 h-[400px] shadow-sm rounded-xl border border-slate-100 dark:border-slate-800">
+          <h3 className="font-bold mb-6 text-slate-800 dark:text-white text-lg">Category Distribution</h3>
+          <ResponsiveContainer width="100%" height="85%">
             <PieChart>
-              <Pie data={catData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="count" label>
-                {catData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+              <Pie data={catData} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={4} dataKey="count" label={{ fill: '#94a3b8', fontSize: 12 }}>
+                {catData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />)}
               </Pie>
-              <Tooltip contentStyle={{borderRadius: '8px'}} />
+              <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}} />
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link to="/authority/queue" className="card p-6 text-center hover:bg-blue-50 dark:hover:bg-slate-800 transition">
-          <AlertTriangle className="w-8 h-8 text-blue-600 mx-auto mb-2"/>
-          <span className="font-medium">Complaints Queue</span>
-        </Link>
-        <Link to="/authority/approvals" className="card p-6 text-center hover:bg-blue-50 dark:hover:bg-slate-800 transition">
-          <Users className="w-8 h-8 text-blue-600 mx-auto mb-2"/>
-          <span className="font-medium">Maintainer Approvals</span>
-        </Link>
-        <Link to="/authority/reports" className="card p-6 text-center hover:bg-blue-50 dark:hover:bg-slate-800 transition">
-          <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2"/>
-          <span className="font-medium">PDF Reports</span>
-        </Link>
-        <Link to="/authority/qr" className="card p-6 text-center hover:bg-blue-50 dark:hover:bg-slate-800 transition">
-          <QrCode className="w-8 h-8 text-blue-600 mx-auto mb-2"/>
-          <span className="font-medium">Generate QR</span>
-        </Link>
       </div>
     </div>
   );
@@ -224,14 +246,14 @@ const MaintainerApprovals = () => {
         <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in">
             <h1 className="text-2xl font-bold mb-6">Maintainer Approvals</h1>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pending.length === 0 ? <p>No pending approvals.</p> : pending.map(m => (
-                    <div key={m._id} className="card p-6">
+                {pending.length === 0 ? <p className="text-slate-500">No pending approvals.</p> : pending.map(m => (
+                    <div key={m._id} className="card p-6 border-l-4 border-l-blue-500 shadow-sm rounded-xl">
                         <h3 className="text-xl font-bold">{m.name}</h3>
                         <p className="text-slate-500 mb-1">{m.email} • {m.phone}</p>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-bold uppercase">{m.jobType}</span>
-                        <div className="flex gap-2 mt-6">
-                            <button onClick={()=>handleApprove(m._id, 'approve')} className="flex-1 bg-green-600 text-white rounded py-2 font-medium hover:bg-green-700">Approve</button>
-                            <button onClick={()=>handleApprove(m._id, 'reject')} className="flex-1 bg-red-100 text-red-700 rounded py-2 font-medium hover:bg-red-200">Reject</button>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-bold uppercase inline-block mt-2">{m.jobType}</span>
+                        <div className="flex gap-2 mt-6 border-t border-slate-100 pt-4">
+                            <button onClick={()=>handleApprove(m._id, 'approve')} className="flex-1 bg-green-100 text-green-700 rounded-lg py-2 font-bold hover:bg-green-200 transition-colors">Approve</button>
+                            <button onClick={()=>handleApprove(m._id, 'reject')} className="flex-1 bg-red-50 text-red-600 rounded-lg py-2 font-bold hover:bg-red-100 transition-colors">Reject</button>
                         </div>
                     </div>
                 ))}
@@ -263,40 +285,42 @@ const QRGenerator = () => {
         <div className="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
             <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><QrCode className="text-blue-600"/> Generate Room QR Map</h1>
             <div className="grid md:grid-cols-2 gap-8">
-                <div className="card p-6">
-                    <h3 className="font-bold mb-4">Room Details</h3>
+                <div className="card p-6 shadow-sm rounded-xl border border-slate-100 dark:border-slate-800">
+                    <h3 className="font-bold mb-4 text-lg">Room Query Details</h3>
                     <form onSubmit={handleGenerate} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">Room Number</label>
-                            <input type="text" required className="input-field" value={roomData.roomNumber} onChange={e=>setRoomData({...roomData, roomNumber: e.target.value})} placeholder="e.g. 101" />
+                            <input type="text" required className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 dark:bg-slate-800 dark:border-slate-700 dark:placeholder-slate-400 dark:text-white dark:focus:ring-blue-500" value={roomData.roomNumber} onChange={e=>setRoomData({...roomData, roomNumber: e.target.value})} placeholder="e.g. 101" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Block</label>
-                            <input type="text" required className="input-field" value={roomData.block} onChange={e=>setRoomData({...roomData, block: e.target.value})} placeholder="e.g. A" />
+                            <input type="text" required className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 dark:bg-slate-800 dark:border-slate-700 dark:placeholder-slate-400 dark:text-white dark:focus:ring-blue-500" value={roomData.block} onChange={e=>setRoomData({...roomData, block: e.target.value})} placeholder="e.g. A" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Floor</label>
-                            <input type="text" required className="input-field" value={roomData.floor} onChange={e=>setRoomData({...roomData, floor: e.target.value})} placeholder="e.g. 1" />
+                            <input type="text" required className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 dark:bg-slate-800 dark:border-slate-700 dark:placeholder-slate-400 dark:text-white dark:focus:ring-blue-500" value={roomData.floor} onChange={e=>setRoomData({...roomData, floor: e.target.value})} placeholder="e.g. 1" />
                         </div>
-                        <button type="submit" disabled={generating} className="btn-primary w-full py-2">
-                            {generating ? 'Generating...' : 'Generate QR Code'}
+                        <button type="submit" disabled={generating} className="btn-primary w-full py-3 mt-4 text-base font-bold shadow-md">
+                            {generating ? 'Generating Node Code...' : 'Generate Assignment QR'}
                         </button>
                     </form>
                 </div>
-                <div className="card p-6 flex flex-col items-center justify-center min-h-[300px] text-center">
+                <div className="card p-6 shadow-sm rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center min-h-[300px] text-center bg-slate-50/50 dark:bg-slate-900/50">
                     {qrCode ? (
                         <>
-                            <img src={qrCode} alt="Room QR" className="w-48 h-48 mb-4 border-4 border-white shadow-lg rounded" />
-                            <h4 className="font-bold text-lg mb-1">Room {roomData.roomNumber}</h4>
-                            <p className="text-slate-500 text-sm mb-4">Block {roomData.block}, Floor {roomData.floor}</p>
-                            <a href={qrCode} download={`QR_Room_${roomData.roomNumber}.png`} className="btn-primary py-2 px-6 flex items-center gap-2">
-                                <Download className="w-4 h-4"/> Download & Print
+                            <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-4">
+                               <img src={qrCode} alt="Room QR" className="w-48 h-48" />
+                            </div>
+                            <h4 className="font-bold text-xl mb-1 text-slate-800 dark:text-white">Room Node: {roomData.roomNumber}</h4>
+                            <p className="text-slate-500 text-sm mb-6">Block {roomData.block}, Floor {roomData.floor}</p>
+                            <a href={qrCode} download={`QR_Room_${roomData.roomNumber}.png`} className="btn-primary py-2.5 px-6 flex items-center gap-2 shadow-sm">
+                                <Download className="w-4 h-4"/> Download Printable Code
                             </a>
                         </>
                     ) : (
-                        <div className="text-slate-400 flex flex-col items-center">
-                            <QrCode className="w-16 h-16 mb-2 opacity-30" />
-                            <p>Fill form to generate a scannable QR code.<br/>Students can scan it to quickly report issues.</p>
+                        <div className="text-slate-400 flex flex-col items-center p-8 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+                            <QrCode className="w-16 h-16 mb-4 opacity-40 text-blue-500" />
+                            <p className="text-sm">Input room details on the left to mint a static QR map point.<br/>Placing these helps precise location reporting.</p>
                         </div>
                     )}
                 </div>
@@ -308,14 +332,17 @@ const QRGenerator = () => {
 // Main Export
 const AuthorityMain = () => {
   return (
-    <div className="min-h-screen pt-16 bg-slate-50 dark:bg-darkBg w-full">
-      <Routes>
-        <Route path="" element={<DashboardHome />} />
-        <Route path="queue" element={<ComplaintsQueue />} />
-        <Route path="approvals" element={<MaintainerApprovals />} />
-        <Route path="reports" element={<div className="max-w-4xl mx-auto p-8"><h1 className="text-2xl font-bold mb-4">Reports</h1><a href="/api/analytics/report" target="_blank" rel="noreferrer" className="btn-primary inline-flex items-center gap-2"><Download className="w-4 h-4"/> Download PDF</a></div>} />
-        <Route path="qr" element={<QRGenerator />} />
-      </Routes>
+    <div className="min-h-screen pt-16 bg-slate-50 dark:bg-slate-950 flex relative">
+      <Sidebar />
+      <div className="flex-1 w-full max-w-full overflow-x-hidden">
+        <Routes>
+          <Route path="" element={<DashboardHome />} />
+          <Route path="queue" element={<ComplaintsQueue />} />
+          <Route path="approvals" element={<MaintainerApprovals />} />
+          <Route path="reports" element={<div className="max-w-4xl mx-auto p-8 animate-fade-in"><div className="card p-10 text-center flex flex-col items-center shadow-sm rounded-xl border border-slate-100 dark:border-slate-800"><FileText className="w-16 h-16 text-blue-500 mb-4 opacity-80"/><h1 className="text-3xl font-bold mb-4 font-jakarta">Monthly PDF Reports</h1><p className="text-slate-500 max-w-md mx-auto mb-8">Download a comprehensive PDF summarizing the resolution rates, maintenance costs, and SLA adherence across all campus sectors.</p><a href="/api/analytics/report" target="_blank" rel="noreferrer" className="btn-primary py-3 px-8 text-lg font-bold shadow-md inline-flex items-center gap-3"><Download className="w-5 h-5"/> Generate Full System Report</a></div></div>} />
+          <Route path="qr" element={<QRGenerator />} />
+        </Routes>
+      </div>
     </div>
   );
 };
