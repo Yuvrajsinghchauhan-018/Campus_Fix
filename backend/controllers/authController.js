@@ -185,6 +185,7 @@ exports.verifyOTP = async (req, res) => {
       // Maintainer Registration Finalize
       const user = await User.create({
         ...userData,
+        role: userData.role || 'maintainer', // Ensure role is present and correct
         phone,
         approvalStatus: 'pending',
         isApproved: false
