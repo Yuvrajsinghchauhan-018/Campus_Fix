@@ -1,4 +1,5 @@
 const Complaint = require('../models/Complaint');
+const QRNode = require('../models/QRNode');
 
 exports.getSummary = async (req, res) => {
   try {
@@ -104,8 +105,25 @@ const { generateQR } = require('../utils/qrGenerator');
 exports.createQR = async (req, res) => {
   try {
     const { roomNumber, block, floor } = req.body;
+    
+    // Check if the QR code for this specific room already exists in DB
+    let existingNode = await QRNode.findOne({ roomNumber, block, floor });
+    
+    if (existingNode) {
+       return res.status(200).json({ success: true, data: existingNode });
+    }
+
+    // If it doesn't exist, generate a new one and save it
     const qrImage = await generateQR(roomNumber, block, floor);
-    res.status(200).json({ success: true, data: qrImage });
+    
+    const newNode = await QRNode.create({
+       roomNumber,
+       block,
+       floor,
+       qrCodeDataUrl: qrImage
+    });
+
+    res.status(200).json({ success: true, data: newNode });
   } catch(error) {
     res.status(500).json({ success: false, error: error.message });
   }
