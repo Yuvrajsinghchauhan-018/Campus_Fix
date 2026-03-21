@@ -144,14 +144,14 @@ const AuthModal = ({ isOpen, onClose, role }) => {
           navigate(`/${role}`);
         }
       } else {
-        const res = await register({ ...formData, role });
+        const res = await register({ ...formData, role: role.toLowerCase() });
         if (res.step === 'otp') {
           setStep('otp');
           setTimer(30);
           setMsg(res.message);
         } else if (res.token) {
           onClose();
-          navigate(`/${role}`);
+          navigate(`/${role.toLowerCase()}`);
         }
       }
     } catch (err) {
@@ -173,7 +173,7 @@ const AuthModal = ({ isOpen, onClose, role }) => {
         phone: formData.phone,
         otp: otpCode,
         isRegistration: tab === 'register',
-        userData: tab === 'register' ? { ...formData, role } : undefined
+        userData: tab === 'register' ? { ...formData, role: role.toLowerCase() } : undefined
       });
 
       if (res.token) {

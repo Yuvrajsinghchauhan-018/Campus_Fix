@@ -5,16 +5,20 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { 
     type: String, 
-    unique: true, 
     sparse: true,
     lowercase: true,
     trim: true
   },
-  password: { type: String },
+  password: { 
+    type: String,
+    select: false
+  },
   role: { 
     type: String, 
     enum: ['student', 'authority', 'maintainer'],
-    required: true 
+    required: true,
+    trim: true,
+    lowercase: true
   },
   collegeId: { 
     type: String, 
@@ -60,10 +64,12 @@ UserSchema.pre('save', async function(next) {
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
 // Match password
 UserSchema.methods.matchPassword = async function(enteredPassword) {
+  if (!this.password || !enteredPassword) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
