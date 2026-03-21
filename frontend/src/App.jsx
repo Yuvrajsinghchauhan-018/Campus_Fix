@@ -22,6 +22,16 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+const PublicRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex h-screen items-center justify-center text-xl">Loading...</div>;
+  if (user && user.role) {
+    // Redirect authenticated users to their respective dashboard
+    return <Navigate to={`/${user.role}`} replace />;
+  }
+  return children;
+};
+
 const ApprovedRoute = ({ children }) => {
   const { user } = useAuth();
   if (user?.role === 'maintainer' && user?.approvalStatus !== 'approved') {
@@ -38,7 +48,7 @@ function App() {
         <Navbar />
         <main className="flex-1 w-full">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
             
             {/* Student Routes */}
             <Route path="/student/*" element={
