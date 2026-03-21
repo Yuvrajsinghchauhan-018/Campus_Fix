@@ -10,8 +10,14 @@ const sendOTP = async (phone, otp) => {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const fromPhone = process.env.TWILIO_PHONE_NUMBER;
 
-  if (!accountSid || !authToken || !fromPhone) {
-    throw new Error("Twilio credentials missing in .env");
+  // Development Fallback: If Twilio is not configured, just log it out to the console securely!
+  if (!accountSid || !authToken || !fromPhone || accountSid === 'your_account_sid' || accountSid.includes('your')) {
+    console.log('\n==================================================');
+    console.log(`🚀 DEVELOPMENT MODE: Simulated SMS dispatch`);
+    console.log(`📱 To Phone: ${phone}`);
+    console.log(`🔑 OTP Code: ${otp}`);
+    console.log('==================================================\n');
+    return { sid: 'simulated_dev_sid' };
   }
 
   const client = twilio(accountSid, authToken);

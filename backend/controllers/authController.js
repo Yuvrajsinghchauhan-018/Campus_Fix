@@ -57,19 +57,20 @@ exports.register = async (req, res) => {
     if (role === 'maintainer') {
       if (!jobType) return res.status(400).json({ message: "Please select a job type." });
 
-      // PART 2: MAINTAINER REGISTRATION (With OTP)
-      const otp = generateOTP();
-      try {
-        await sendOTP(phone, otp);
-        await OTPStore.findOneAndUpdate(
-          { phone }, 
-          { otp, createdAt: Date.now() }, 
-          { upsert: true, new: true }
-        );
-        return res.status(200).json({ success: true, step: 'otp', message: "Verification code sent to your phone." });
-      } catch (twilioErr) {
-        return res.status(500).json({ message: "Failed to send OTP: " + twilioErr.message });
-      }
+      // PART 2: MAINTAINER DIRECT REGISTRATION (No OTP)
+      const user = await User.create({
+        name,
+        phone,
+        role: 'maintainer',
+        jobType,
+        approvalStatus: 'pending',
+        isApproved: false
+      });
+
+      return res.status(201).json({ 
+        success: true, 
+        message: "Registration successful! Your account is under review. You will be notified once approved." 
+      });
     }
 
     res.status(400).json({ message: "Invalid role specified." });
@@ -112,24 +113,21 @@ exports.login = async (req, res) => {
       return res.status(200).json({ success: true, token, user: { id: user._id, name: user.name, role: user.role } });
     }
 
-    // 3. Maintainer Login (Phone only - OTP)
+    // 3. Maintainer Login (Phone only - Direct)
     if (role === 'maintainer') {
       if (!phone) return res.status(400).json({ message: "Phone number required." });
       const user = await User.findOne({ phone, role: 'maintainer' });
       if (!user) return res.status(404).json({ message: "No account found with this phone number." });
       
-      const otp = generateOTP();
-      try {
-        await sendOTP(phone, otp);
-        await OTPStore.findOneAndUpdate(
-          { phone }, 
-          { otp, createdAt: Date.now() }, 
-          { upsert: true, new: true }
-        );
-        return res.status(200).json({ success: true, step: 'otp', message: "OTP sent to your registered phone." });
-      } catch (twilioErr) {
-        return res.status(500).json({ message: "Failed to send OTP: " + twilioErr.message });
+      if (user.approvalStatus === 'pending') {
+        return res.status(403).json({ message: "Your account is still under review." });
       }
+      if (user.approvalStatus === 'rejected') {
+        return res.status(403).json({ message: "Your application was not approved." });
+      }
+
+      const token = generateToken(user._id);
+      return res.status(200).json({ success: true, token, user: { id: user._id, name: user.name, role: user.role } });
     }
     res.status(400).json({ message: "Invalid role specified." });
   } catch (error) {
