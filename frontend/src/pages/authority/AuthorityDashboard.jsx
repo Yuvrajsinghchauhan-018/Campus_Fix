@@ -310,11 +310,11 @@ const AuthorityMain = () => {
   return (
     <div className="min-h-screen pt-16 bg-slate-50 dark:bg-darkBg w-full">
       <Routes>
-        <Route path="/" element={<DashboardHome />} />
-        <Route path="/queue" element={<ComplaintsQueue />} />
-        <Route path="/approvals" element={<MaintainerApprovals />} />
-        <Route path="/reports" element={<div className="max-w-4xl mx-auto p-8"><h1 className="text-2xl font-bold mb-4">Reports</h1><a href="/api/analytics/report" target="_blank" rel="noreferrer" className="btn-primary inline-flex items-center gap-2"><Download className="w-4 h-4"/> Download PDF</a></div>} />
-        <Route path="/qr" element={<QRGenerator />} />
+        <Route path="" element={<DashboardHome />} />
+        <Route path="queue" element={<ComplaintsQueue />} />
+        <Route path="approvals" element={<MaintainerApprovals />} />
+        <Route path="reports" element={<div className="max-w-4xl mx-auto p-8"><h1 className="text-2xl font-bold mb-4">Reports</h1><a href="/api/analytics/report" target="_blank" rel="noreferrer" className="btn-primary inline-flex items-center gap-2"><Download className="w-4 h-4"/> Download PDF</a></div>} />
+        <Route path="qr" element={<QRGenerator />} />
       </Routes>
     </div>
   );

@@ -220,8 +220,8 @@ const MaintainerMain = () => {
     return (
         <div className="min-h-screen pt-16 bg-slate-50 dark:bg-darkBg w-full">
             <Routes>
-                <Route path="/" element={<MaintainerHome />} />
-                <Route path="/task/:id" element={<TaskDetail />} />
+                <Route path="" element={<MaintainerHome />} />
+                <Route path="task/:id" element={<TaskDetail />} />
             </Routes>
         </div>
     );
