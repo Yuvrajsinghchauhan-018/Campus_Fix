@@ -115,10 +115,10 @@ const StudentMain = () => {
   return (
     <div className="min-h-screen pt-16 bg-slate-50 dark:bg-darkBg">
       <Routes>
-        <Route path="/" element={<DashboardHome />} />
-        <Route path="/new" element={<NewComplaint />} />
-        <Route path="/complaint/:id" element={<ComplaintDetail />} />
-        <Route path="/notifications" element={<NotificationList />} />
+        <Route path="" element={<DashboardHome />} />
+        <Route path="new" element={<NewComplaint />} />
+        <Route path="complaint/:id" element={<ComplaintDetail />} />
+        <Route path="notifications" element={<NotificationList />} />
       </Routes>
     </div>
   );

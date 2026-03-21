@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import { Sparkles, Image as ImageIcon, UploadCloud, X, Loader2 } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, UploadCloud, X, Loader2, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const NewComplaint = () => {
