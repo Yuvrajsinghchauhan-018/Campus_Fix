@@ -141,7 +141,7 @@ const AuthModal = ({ isOpen, onClose, role }) => {
           setTimer(30);
         } else if (res.token) {
           onClose();
-          navigate(`/${role}`);
+          navigate(`/${role}`, { replace: true });
         }
       } else {
         const res = await register({ ...formData, role: role.toLowerCase() });
@@ -149,9 +149,11 @@ const AuthModal = ({ isOpen, onClose, role }) => {
           setStep('otp');
           setTimer(30);
           setMsg(res.message);
-        } else if (res.token) {
-          onClose();
-          navigate(`/${role.toLowerCase()}`);
+        } else if (res.token || res.success) {
+          setMsg('Registration successful! Please login to continue.');
+          setTab('login');
+          // Clear sensitive fields for login
+          setFormData({ ...formData, password: '', confirmPassword: '' });
         }
       }
     } catch (err) {
@@ -271,74 +273,96 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                   </div>
                 )}
 
-                <div className="space-y-5">
-                  {tab === 'register' && (
-                    <>
+                {tab === 'register' ? (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Full Name</label>
+                      <input type="text" name="name" required value={formData.name} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="Enter full name" />
+                    </div>
+                    {role === 'student' && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Full Name</label>
-                        <input type="text" name="name" required value={formData.name} onChange={handleChange} className="input-field py-3.5" placeholder="Enter full name" />
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">College ID</label>
+                        <input type="text" name="collegeId" required value={formData.collegeId} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="ID Number" />
                       </div>
-                      {role === 'student' && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">College ID</label>
-                          <input type="text" name="collegeId" required value={formData.collegeId} onChange={handleChange} className="input-field py-3.5" placeholder="ID Number" />
-                        </div>
-                      )}
+                    )}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Phone Number</label>
+                      <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="10-digit number" maxLength={10} />
+                    </div>
+                    {role === 'maintainer' && (
+                      <div className="space-y-1.5 md:col-span-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Job Type</label>
+                        <select name="jobType" required value={formData.jobType} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm">
+                          {['Electrician','Plumber','IT Technician','AC Mechanic','Carpenter','Painter','Civil Worker','Sweeper'].map(job => (
+                            <option key={job} value={job}>{job}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    {role === 'student' && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Phone Number</label>
-                        <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="input-field py-3.5" placeholder="10-digit number" maxLength={10} />
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Gender</label>
+                        <select name="gender" required value={formData.gender} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm">
+                          <option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option>
+                        </select>
                       </div>
-                      {role === 'maintainer' && (
+                    )}
+                    {role !== 'maintainer' && (
+                      <div className="space-y-1.5 md:col-span-2 mt-1">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Email Address</label>
+                        <input type="email" name="email" required value={formData.email} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="example@gmail.com" />
+                      </div>
+                    )}
+                    {role !== 'maintainer' && (
+                      <>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Job Type</label>
-                          <select name="jobType" required value={formData.jobType} onChange={handleChange} className="input-field py-3.5">
-                            {['Electrician','Plumber','IT Technician','AC Mechanic','Carpenter','Painter','Civil Worker','Sweeper'].map(job => (
-                              <option key={job} value={job}>{job}</option>
-                            ))}
-                          </select>
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Password</label>
+                          <input type="password" name="password" required value={formData.password} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="••••••••" />
                         </div>
-                      )}
-                      {role === 'student' && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Gender</label>
-                          <select name="gender" required value={formData.gender} onChange={handleChange} className="input-field py-3.5">
-                            <option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option>
-                          </select>
+                        {role === 'student' && (
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Confirm Password</label>
+                            <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="••••••••" />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                    className="space-y-5"
+                  >
+                    {role !== 'maintainer' && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">
+                          {role === 'student' ? 'Email or College ID' : 'Email Address'}
+                        </label>
+                        <input type="text" name="email" required value={formData.email} onChange={handleChange} className="input-field py-3.5 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder={role === 'student' ? "ID or Gmail" : "example@gmail.com"} />
+                      </div>
+                    )}
+
+                    {role === 'maintainer' && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Phone Number</label>
+                        <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="input-field py-3.5 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="Registered number" maxLength={10} />
+                      </div>
+                    )}
+
+                    {role !== 'maintainer' && (
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Password</label>
+                          {/* Optionally a 'forgot password' link could go here */}
                         </div>
-                      )}
-                    </>
-                  )}
-
-                  {role !== 'maintainer' && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">
-                        {role === 'student' && tab === 'login' ? 'Email or College ID' : 'Email Address'}
-                      </label>
-                      <input type="text" name="email" required value={formData.email} onChange={handleChange} className="input-field py-3.5" placeholder={role === 'student' && tab === 'login' ? "ID or Gmail" : "example@gmail.com"} />
-                    </div>
-                  )}
-
-                  {role === 'maintainer' && tab === 'login' && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Phone Number</label>
-                      <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="input-field py-3.5" placeholder="Registered number" maxLength={10} />
-                    </div>
-                  )}
-
-                  {role !== 'maintainer' && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Password</label>
-                      <input type="password" name="password" required value={formData.password} onChange={handleChange} className="input-field py-3.5" placeholder="••••••••" />
-                    </div>
-                  )}
-
-                  {tab === 'register' && role === 'student' && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Confirm Password</label>
-                      <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} className="input-field py-3.5" placeholder="••••••••" />
-                    </div>
-                  )}
-                </div>
+                        <input type="password" name="password" required value={formData.password} onChange={handleChange} className="input-field py-3.5 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="••••••••" />
+                      </div>
+                    )}
+                  </motion.div>
+                )}
 
                 <button type="submit" disabled={loading} className="btn-primary w-full py-4 text-base font-bold rounded-2xl mt-4 shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (tab === 'login' ? 'Sign In' : 'Create Account')}

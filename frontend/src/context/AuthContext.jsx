@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
           } else {
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             const res = await api.get('/auth/me');
-            setUser(res.data.data);
+            setUser(res.data.user);
           }
         } catch (error) {
           logout();
@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
       setUser(res.data.user);
+      api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
     }
     return res.data;
   };
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
       setUser(res.data.user);
+      api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
     }
     return res.data;
   };
