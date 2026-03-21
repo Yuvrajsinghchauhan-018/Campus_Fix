@@ -149,9 +149,11 @@ const AuthModal = ({ isOpen, onClose, role }) => {
           setStep('otp');
           setTimer(30);
           setMsg(res.message);
-        } else if (res.token) {
-          onClose();
-          navigate(`/${role.toLowerCase()}`);
+        } else if (res.token || res.success) {
+          setMsg('Registration successful! Please login to continue.');
+          setTab('login');
+          // Clear sensitive fields for login
+          setFormData({ ...formData, password: '', confirmPassword: '' });
         }
       }
     } catch (err) {
