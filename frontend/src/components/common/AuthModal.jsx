@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 
 const AuthModal = ({ isOpen, onClose, role }) => {
   const [tab, setTab] = useState('login'); // 'login' or 'register'
-  const [step, setStep] = useState('form'); // 'form', 'otp', or 'message'
-  const { login, register, verifyOTP, resendOTP } = useAuth();
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { login, register } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -21,20 +21,9 @@ const AuthModal = ({ isOpen, onClose, role }) => {
     jobType: 'Electrician'
   });
   
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(0);
-
-  const otpInputs = useRef([]);
-
-  useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => setTimer(t => t - 1), 1000);
-      return () => clearInterval(interval);
-    }
-  }, [timer]);
 
   if (!isOpen) return null;
 
@@ -43,49 +32,6 @@ const AuthModal = ({ isOpen, onClose, role }) => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
-  };
-
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
-    setError('');
-
-    if (value && index < 5) {
-      otpInputs.current[index + 1].focus();
-    }
-  };
-
-  const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace') {
-      if (!otp[index] && index > 0) {
-        const newOtp = [...otp];
-        newOtp[index - 1] = '';
-        setOtp(newOtp);
-        otpInputs.current[index - 1].focus();
-      } else {
-        const newOtp = [...otp];
-        newOtp[index] = '';
-        setOtp(newOtp);
-      }
-    }
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, 6);
-    if (!/^\d+$/.test(pastedData)) return;
-    
-    const newOtp = [...otp];
-    const digits = pastedData.split('');
-    digits.forEach((digit, i) => {
-      if (i < 6) newOtp[i] = digit;
-    });
-    setOtp(newOtp);
-    
-    const nextIndex = Math.min(digits.length, 5);
-    otpInputs.current[nextIndex].focus();
   };
 
   const validateForm = () => {
@@ -136,24 +82,21 @@ const AuthModal = ({ isOpen, onClose, role }) => {
         
         const res = await login(payload);
         
-        if (res.step === 'otp') {
-          setStep('otp');
-          setTimer(30);
-        } else if (res.token) {
+        if (res.token) {
           onClose();
           navigate(`/${role}`, { replace: true });
         }
       } else {
         const res = await register({ ...formData, role: role.toLowerCase() });
-        if (res.step === 'otp') {
-          setStep('otp');
-          setTimer(30);
-          setMsg(res.message);
-        } else if (res.token || res.success) {
-          setMsg('Registration successful! Please login to continue.');
-          setTab('login');
-          // Clear sensitive fields for login
-          setFormData({ ...formData, password: '', confirmPassword: '' });
+        if (res.token || res.success) {
+          if(role === 'maintainer') {
+            setMsg(res.message);
+            setShowSuccess(true);
+          } else {
+            setMsg('Registration successful! Please login to continue.');
+            setTab('login');
+            setFormData({ ...formData, password: '', confirmPassword: '' });
+          }
         }
       }
     } catch (err) {
@@ -161,56 +104,6 @@ const AuthModal = ({ isOpen, onClose, role }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleVerify = async () => {
-    const otpCode = otp.join('');
-    if (otpCode.length < 6) return setError("Enter 6-digit OTP");
-
-    setLoading(true);
-    setError('');
-    
-    try {
-      const res = await verifyOTP({ 
-        phone: formData.phone,
-        otp: otpCode,
-        isRegistration: tab === 'register',
-        userData: tab === 'register' ? { ...formData, role: role.toLowerCase() } : undefined
-      });
-
-      if (res.token) {
-        onClose();
-        navigate(`/${role}`);
-      } else {
-        setMsg(res.message);
-        setStep('message');
-      }
-    } catch (err) {
-      setError(err?.response?.data?.message || err?.response?.data?.error || err.message || "Invalid OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (timer > 0) return;
-    setLoading(true);
-    try {
-      await resendOTP(formData.phone);
-      setTimer(30);
-      setMsg("OTP Resent successfully!");
-    } catch (err) {
-      setError(err?.response?.data?.message || "Failed to resend OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetModal = () => {
-    setStep('form');
-    setOtp(['', '', '', '', '', '']);
-    setError('');
-    setMsg('');
   };
 
   return (
@@ -230,8 +123,8 @@ const AuthModal = ({ isOpen, onClose, role }) => {
               <X className="w-6 h-6" />
             </button>
 
-            {(step === 'otp' || step === 'message') && (
-              <button onClick={() => setStep('form')} className="absolute top-6 left-6 text-slate-400 hover:text-white transition-colors flex items-center gap-1 text-sm font-medium">
+            {showSuccess && (
+              <button onClick={() => setShowSuccess(false)} className="absolute top-6 left-6 text-slate-400 hover:text-white transition-colors flex items-center gap-1 text-sm font-medium">
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
             )}
@@ -240,11 +133,9 @@ const AuthModal = ({ isOpen, onClose, role }) => {
               {role === 'authority' ? 'Authority Access' : role === 'student' ? 'Student Portal' : 'Maintainer Portal'}
             </h2>
             <p className="text-slate-400 text-center text-sm mb-8 font-medium">
-              {step === 'form' 
+              {!showSuccess
                 ? (role === 'authority' ? 'Access restricted to authorized college staff only.' : 'Login or create your account to continue.')
-                : step === 'otp' 
-                  ? `We sent a 6-digit code to +91 XXXX${(formData.phone || '').slice(-4)}`
-                  : 'Account Status'}
+                : 'Account Status'}
             </p>
 
             {error && (
@@ -252,13 +143,13 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                 {error}
               </motion.div>
             )}
-            {msg && (
+            {msg && !showSuccess && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl text-sm font-medium leading-relaxed">
                 {msg}
               </motion.div>
             )}
 
-            {step === 'form' ? (
+            {!showSuccess ? (
               <form onSubmit={handleSubmit} className="space-y-5">
                 {canRegister && (
                   <div className="flex mb-8 bg-slate-800/50 rounded-2xl p-1.5 border border-white/5">
@@ -356,7 +247,6 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center mb-1">
                           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Password</label>
-                          {/* Optionally a 'forgot password' link could go here */}
                         </div>
                         <input type="password" name="password" required value={formData.password} onChange={handleChange} className="input-field py-3.5 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm" placeholder="••••••••" />
                       </div>
@@ -368,32 +258,6 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (tab === 'login' ? 'Sign In' : 'Create Account')}
                 </button>
               </form>
-            ) : step === 'otp' ? (
-              <div className="flex flex-col items-center">
-                <div className="flex gap-3 mb-10 w-full justify-center">
-                  {otp.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={el => otpInputs.current[i] = el}
-                      type="text" maxLength={1} value={digit}
-                      onChange={(e) => handleOtpChange(i, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(i, e)}
-                      onPaste={handlePaste}
-                      autoComplete="one-time-code"
-                      className="w-12 h-14 text-center text-2xl font-bold bg-slate-800 border-2 border-slate-700 rounded-xl focus:border-blue-500 focus:ring-0 transition-all outline-none text-white shadow-inner"
-                    />
-                  ))}
-                </div>
-                <button onClick={handleVerify} disabled={loading} className="btn-primary w-full py-4 text-base font-bold rounded-2xl shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all mb-6 flex justify-center items-center gap-2">
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Code'}
-                </button>
-                <div className="text-center space-y-3">
-                  <p className="text-sm text-slate-400 font-medium">Didn't receive the code?</p>
-                  <button onClick={handleResend} disabled={timer > 0 || loading} className={`text-sm font-bold transition-colors ${timer > 0 ? 'text-slate-600 cursor-not-allowed' : 'text-blue-500 hover:text-blue-400'}`}>
-                    {timer > 0 ? `Resend in ${timer}s` : 'Resend Code Now'}
-                  </button>
-                </div>
-              </div>
             ) : (
               <div className="text-center py-8">
                 <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl text-sm font-medium leading-relaxed">{msg}</div>
