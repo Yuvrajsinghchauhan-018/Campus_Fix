@@ -129,12 +129,16 @@ const DashboardHome = () => {
 
 // 2. Complaints Queue
 const ComplaintsQueue = () => {
-    const [complaints, setComplaints] = useState({ queue: [], assigned: [], completed: [] });
+    const [complaints, setComplaints] = useState({ queue: [], assigned: [], completed: [], dismissed: [] });
     const [tab, setTab] = useState('queue');
     const [maintainers, setMaintainers] = useState([]);
     const [selectedComp, setSelectedComp] = useState(null); // for assigning modal
     const [viewingComp, setViewingComp] = useState(null); // for full view modal
     const [assignData, setAssignData] = useState({ assignedMaintainer: '', deadline: '', internalNote: '' });
+    const [dismissComp, setDismissComp] = useState(null);
+    const [dismissReason, setDismissReason] = useState('Inappropriate Content');
+    const [customReason, setCustomReason] = useState('');
+    const [dismissing, setDismissing] = useState(false);
     const [refresh, setRefresh] = useState(0);
 
     useSocket('complaint_update', () => setRefresh(prev => prev + 1));
@@ -145,9 +149,10 @@ const ComplaintsQueue = () => {
         const mRes = await api.get('/maintainers');
         const allComps = cRes.data.data || [];
         setComplaints({
-            queue: allComps.filter(c => !c.assignedMaintainer && c.status !== 'Resolved'),
-            assigned: allComps.filter(c => c.assignedMaintainer && c.status !== 'Resolved'),
-            completed: allComps.filter(c => c.status === 'Resolved')
+            queue: allComps.filter(c => !c.assignedMaintainer && c.status !== 'Resolved' && c.status !== 'Rejected'),
+            assigned: allComps.filter(c => c.assignedMaintainer && c.status !== 'Resolved' && c.status !== 'Rejected'),
+            completed: allComps.filter(c => c.status === 'Resolved'),
+            dismissed: allComps.filter(c => c.status === 'Rejected')
         });
         setMaintainers(mRes.data.data);
     };
@@ -164,7 +169,22 @@ const ComplaintsQueue = () => {
             console.error('Assignment Error:', err?.response?.data?.message || err.message);
             alert(err?.response?.data?.message || "Failed to assign maintainer");
         }
-    }
+    };
+
+    const handleDismissSubmit = async (e) => {
+        e.preventDefault();
+        setDismissing(true);
+        const finalReason = dismissReason === 'Other' ? customReason : dismissReason;
+        try {
+            await api.patch(`/complaints/${dismissComp._id}/status`, { status: 'Rejected', resolutionNote: finalReason });
+            setDismissComp(null);
+            fetchAll();
+        } catch(err) {
+            alert(err?.response?.data?.message || err.message);
+        } finally {
+            setDismissing(false);
+        }
+    };
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative text-sm md:text-base">
@@ -174,6 +194,7 @@ const ComplaintsQueue = () => {
                     <button onClick={() => setTab('queue')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'queue' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600' : 'text-slate-500'}`}>Task Queue ({complaints.queue.length})</button>
                     <button onClick={() => setTab('assigned')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'assigned' ? 'bg-white dark:bg-slate-700 shadow-sm text-orange-600' : 'text-slate-500'}`}>Assigned ({complaints.assigned.length})</button>
                     <button onClick={() => setTab('completed')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'completed' ? 'bg-white dark:bg-slate-700 shadow-sm text-green-600' : 'text-slate-500'}`}>Completed ({complaints.completed.length})</button>
+                    <button onClick={() => setTab('dismissed')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'dismissed' ? 'bg-white dark:bg-slate-700 shadow-sm text-red-600' : 'text-slate-500'}`}>Dismissed ({complaints.dismissed.length})</button>
                 </div>
             </div>
             
@@ -194,7 +215,7 @@ const ComplaintsQueue = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-darkBorder">
-                        {(tab === 'queue' ? complaints.queue : tab === 'assigned' ? complaints.assigned : complaints.completed).map(c => (
+                        {(tab === 'queue' ? complaints.queue : tab === 'assigned' ? complaints.assigned : tab === 'completed' ? complaints.completed : complaints.dismissed).map(c => (
                             <tr key={c._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                 <td className="p-4">
                                     <button onClick={() => setViewingComp(c)} className="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline decoration-blue-300 dark:decoration-blue-700 underline-offset-4 text-left">
@@ -214,7 +235,10 @@ const ComplaintsQueue = () => {
                                 </td>
                                 <td className="p-4">
                                     {tab === 'queue' ? (
-                                        <button onClick={() => setSelectedComp(c)} className="btn-primary py-1 px-3 text-sm">Assign</button>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button onClick={() => setSelectedComp(c)} className="btn-primary py-1 px-3 text-sm">Assign</button>
+                                            <button onClick={() => setDismissComp(c)} className="py-1 px-3 text-sm border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20 rounded shadow-sm transition">Dismiss</button>
+                                        </div>
                                     ) : tab === 'assigned' ? (
                                         <div>
                                             <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{c.assignedMaintainer?.name || 'Unknown'}</p>
@@ -286,6 +310,32 @@ const ComplaintsQueue = () => {
                             <div className="flex gap-2 pt-4">
                                 <button type="submit" className="flex-1 btn-primary py-3 px-6 shadow-md shadow-blue-500/20">Confirm Assignment</button>
                                 <button type="button" onClick={()=>setSelectedComp(null)} className="flex-1 py-3 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-slate-600 dark:text-slate-300 text-sm transition-all shadow-sm">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {dismissComp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={()=>setDismissComp(null)}>
+                    <div className="card p-6 w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 rounded-2xl" onClick={e=>e.stopPropagation()}>
+                        <h2 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">Dismiss Job</h2>
+                        <form onSubmit={handleDismissSubmit}>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Reason for Dismissal</label>
+                            <div className="space-y-3 mb-4">
+                                {['Inappropriate Content', 'Already Solved', 'Out of Scope', 'Not Enough Information', 'Other'].map(r => (
+                                    <label key={r} className="flex items-center gap-3 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 p-2 rounded transition-colors">
+                                        <input type="radio" name="dismissReason" value={r} checked={dismissReason === r} onChange={() => setDismissReason(r)} className="accent-red-500 w-4 h-4" />
+                                        <span className="font-medium text-slate-700 dark:text-slate-300">{r}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            {dismissReason === 'Other' && (
+                                <textarea required className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm mb-4 focus:ring-2 focus:ring-red-500 transition-all dark:text-white" placeholder="Enter custom reason..." value={customReason} onChange={e => setCustomReason(e.target.value)} rows={3} />
+                            )}
+                            <div className="flex gap-2 pt-2">
+                                <button type="submit" disabled={dismissing} className="flex-1 bg-red-600 text-white rounded-xl py-3 font-bold shadow-md hover:bg-red-700 transition disabled:opacity-70">{dismissing ? 'Dismissing...' : 'Confirm Dismissal'}</button>
+                                <button type="button" onClick={()=>setDismissComp(null)} className="flex-1 py-3 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">Cancel</button>
                             </div>
                         </form>
                     </div>

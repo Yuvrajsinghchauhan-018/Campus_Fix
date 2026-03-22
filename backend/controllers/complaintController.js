@@ -212,12 +212,17 @@ exports.approveAndAssign = async (req, res) => {
 // @access  Private (Maintainer/Authority)
 exports.updateStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, resolutionNote } = req.body;
     let complaint = await Complaint.findById(req.params.id);
     
     if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
 
     complaint.status = status;
+    if (resolutionNote) complaint.resolutionNote = resolutionNote;
+    if (status === 'Rejected') {
+      complaint.resolvedAt = Date.now();
+    }
+    
     await complaint.save();
     
     const io = req.app.get('socketio');

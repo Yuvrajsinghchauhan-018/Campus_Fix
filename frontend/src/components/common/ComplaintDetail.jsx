@@ -8,7 +8,7 @@ const getImageUrl = (url) => url?.startsWith('/uploads/') ? `${STATIC_BASE_URL}$
 
 const StatusTimeline = ({ history = [], currentStatus, createdAt }) => {
   // Mock timeline logic based on current status
-  const flow = ['Pending', 'Assigned', 'In Progress', 'Resolved'];
+  const flow = currentStatus === 'Rejected' ? ['Pending', 'Rejected'] : ['Pending', 'Assigned', 'In Progress', 'Resolved'];
   const currentIndex = flow.indexOf(currentStatus) !== -1 ? flow.indexOf(currentStatus) : 0;
   
   return (
@@ -79,6 +79,7 @@ const ComplaintDetail = () => {
             <div className="flex flex-wrap gap-2 mb-4">
               <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                 complaint.status==='Resolved' ? 'bg-green-100 text-green-700' :
+                complaint.status==='Rejected' ? 'bg-red-100 text-red-700' :
                 complaint.status==='Pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'
               }`}>{complaint.status}</span>
               
@@ -130,6 +131,16 @@ const ComplaintDetail = () => {
                     onError={(e) => { e.target.src = 'https://placehold.co/400x400/png?text=Image+Not+Found'; }}
                   />
                )}
+            </div>
+          )}
+
+          {complaint.status === 'Rejected' && (
+            <div className="card p-6 md:p-8 border-t-4 border-t-red-500 bg-red-50/30 dark:bg-red-900/10">
+               <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-red-600 dark:text-red-400"><AlertOctagon className="w-5 h-5"/> Job Dismissed</h3>
+               <p className="text-slate-600 dark:text-slate-300 mb-4 font-medium">This request was dismissed by the authority for the following reason:</p>
+               <div className="p-4 bg-white dark:bg-slate-800 rounded-lg text-slate-800 dark:text-slate-200 border border-red-100 dark:border-red-900/30 font-medium">
+                  {complaint.resolutionNote || 'No specific reason provided.'}
+               </div>
             </div>
           )}
 
