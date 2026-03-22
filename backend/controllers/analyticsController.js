@@ -10,7 +10,13 @@ const buildAdminQuery = async (req) => {
        query.categories = { $in: admin.responsibilities };
        query.block = admin.block;
        if (admin.floors && admin.floors.length > 0) {
-         query.floor = { $in: admin.floors };
+         const floorVariations = [];
+         admin.floors.forEach(f => {
+           floorVariations.push(f);
+           const match = f.match(/\d+/);
+           if (match) floorVariations.push(match[0]);
+         });
+         query.floor = { $in: floorVariations };
        }
     }
   }

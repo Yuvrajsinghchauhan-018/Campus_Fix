@@ -16,6 +16,15 @@ exports.createComplaint = async (req, res) => {
 
     const aiResult = await analyzeComplaint(title, description);
 
+    // AI Safety Check
+    if (aiResult && aiResult.isInappropriate) {
+      return res.status(400).json({ 
+        success: false, 
+        isWarning: true,
+        message: `STRICT WARNING: Your complaint has been flagged as inappropriate/vulgar. Reason: ${aiResult.safetyReason}. This incident may be reported to college administration. Please maintain decorum while using this platform.` 
+      });
+    }
+
     // Dynamic Validation and Mapping of AI Arrays
     let rawCategories = (aiResult && aiResult.categories && Array.isArray(aiResult.categories)) ? aiResult.categories : [];
     
@@ -64,8 +73,13 @@ exports.createComplaint = async (req, res) => {
     let assignmentReason = '';
 
     if (authorities.length > 0) {
+      const isFloorMatch = (admin, fl) => {
+        if (!admin.floors) return false;
+        return admin.floors.some(af => af === fl || (af.match(/\d+/) && af.match(/\d+/)[0] === fl));
+      };
+
       // Strategy 1: Perfect Match (Floor + Any Matching Category)
-      let matches = authorities.filter(a => a.floors && a.floors.includes(floor) && a.responsibilities && finalCategories.some(cat => a.responsibilities.includes(cat)));
+      let matches = authorities.filter(a => isFloorMatch(a, floor) && a.responsibilities && finalCategories.some(cat => a.responsibilities.includes(cat)));
       
       if (matches.length > 0) {
         assignedAdmins = matches.map(m => m._id);
@@ -78,7 +92,7 @@ exports.createComplaint = async (req, res) => {
           assignmentReason = `Fallback: No admin on ${floor}. Routed to ${matches.length} admin(s) handling ${JSON.stringify(finalCategories)}.`;
         } else {
           // Strategy 3: Floor Match (Any category)
-          matches = authorities.filter(a => a.floors && a.floors.includes(floor));
+          matches = authorities.filter(a => isFloorMatch(a, floor));
           if (matches.length > 0) {
             assignedAdmins = matches.map(m => m._id);
             assignmentReason = `Fallback: No domain match. Routed to ${matches.length} admin(s) on ${floor}.`;
@@ -137,7 +151,13 @@ exports.getComplaints = async (req, res) => {
       query.categories = { $in: admin.responsibilities };
       query.block = admin.block;
       if (admin.floors && admin.floors.length > 0) {
-        query.floor = { $in: admin.floors };
+        const floorVariations = [];
+        admin.floors.forEach(f => {
+          floorVariations.push(f);
+          const match = f.match(/\d+/);
+          if (match) floorVariations.push(match[0]);
+        });
+        query.floor = { $in: floorVariations };
       }
     }
     
@@ -201,12 +221,17 @@ exports.approveAndAssign = async (req, res) => {
 // @access  Private (Maintainer/Authority)
 exports.updateStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, resolutionNote } = req.body;
     let complaint = await Complaint.findById(req.params.id);
     
     if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
 
     complaint.status = status;
+    if (resolutionNote) complaint.resolutionNote = resolutionNote;
+    if (status === 'Rejected') {
+      complaint.resolvedAt = Date.now();
+    }
+    
     await complaint.save();
     
     const io = req.app.get('socketio');

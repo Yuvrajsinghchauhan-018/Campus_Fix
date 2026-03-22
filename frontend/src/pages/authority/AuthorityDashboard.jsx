@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import api, { STATIC_BASE_URL } from '../../api/axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, LayoutDashboard, LogOut, UserPlus, X, Image as ImageIcon } from 'lucide-react';
+import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, LayoutDashboard, LogOut, UserPlus, X, Image as ImageIcon, Trash2, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
@@ -25,10 +25,13 @@ const Sidebar = () => {
            <Link to="/authority/approvals" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/approvals' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <Users className="w-5 h-5" /> Maintainer Approvals
            </Link>
-           <Link to="/authority/add-maintainer" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/add-maintainer' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-              <UserPlus className="w-5 h-5" /> Add Maintainer
-           </Link>
-           <Link to="/authority/reports" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/reports' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+            <Link to="/authority/add-maintainer" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/add-maintainer' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+               <UserPlus className="w-5 h-5" /> Add Maintainer
+            </Link>
+            <Link to="/authority/manage-maintainers" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/manage-maintainers' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+               <Users className="w-5 h-5" /> Manage Maintainers
+            </Link>
+            <Link to="/authority/reports" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/reports' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <FileText className="w-5 h-5" /> PDF Reports
            </Link>
            <Link to="/authority/qr" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/qr' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -129,12 +132,16 @@ const DashboardHome = () => {
 
 // 2. Complaints Queue
 const ComplaintsQueue = () => {
-    const [complaints, setComplaints] = useState({ queue: [], assigned: [], completed: [] });
+    const [complaints, setComplaints] = useState({ queue: [], assigned: [], completed: [], dismissed: [] });
     const [tab, setTab] = useState('queue');
     const [maintainers, setMaintainers] = useState([]);
     const [selectedComp, setSelectedComp] = useState(null); // for assigning modal
     const [viewingComp, setViewingComp] = useState(null); // for full view modal
     const [assignData, setAssignData] = useState({ assignedMaintainer: '', deadline: '', internalNote: '' });
+    const [dismissComp, setDismissComp] = useState(null);
+    const [dismissReason, setDismissReason] = useState('Inappropriate Content');
+    const [customReason, setCustomReason] = useState('');
+    const [dismissing, setDismissing] = useState(false);
     const [refresh, setRefresh] = useState(0);
 
     useSocket('complaint_update', () => setRefresh(prev => prev + 1));
@@ -145,9 +152,10 @@ const ComplaintsQueue = () => {
         const mRes = await api.get('/maintainers');
         const allComps = cRes.data.data || [];
         setComplaints({
-            queue: allComps.filter(c => !c.assignedMaintainer && c.status !== 'Resolved'),
-            assigned: allComps.filter(c => c.assignedMaintainer && c.status !== 'Resolved'),
-            completed: allComps.filter(c => c.status === 'Resolved')
+            queue: allComps.filter(c => c.status === 'Pending'),
+            assigned: allComps.filter(c => ['Assigned', 'Accepted', 'In Progress'].includes(c.status)),
+            completed: allComps.filter(c => c.status === 'Resolved'),
+            dismissed: allComps.filter(c => c.status === 'Rejected')
         });
         setMaintainers(mRes.data.data);
     };
@@ -164,7 +172,22 @@ const ComplaintsQueue = () => {
             console.error('Assignment Error:', err?.response?.data?.message || err.message);
             alert(err?.response?.data?.message || "Failed to assign maintainer");
         }
-    }
+    };
+
+    const handleDismissSubmit = async (e) => {
+        e.preventDefault();
+        setDismissing(true);
+        const finalReason = dismissReason === 'Other' ? customReason : dismissReason;
+        try {
+            await api.patch(`/complaints/${dismissComp._id}/status`, { status: 'Rejected', resolutionNote: finalReason });
+            setDismissComp(null);
+            fetchAll();
+        } catch(err) {
+            alert(err?.response?.data?.message || err.message);
+        } finally {
+            setDismissing(false);
+        }
+    };
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative text-sm md:text-base">
@@ -174,6 +197,7 @@ const ComplaintsQueue = () => {
                     <button onClick={() => setTab('queue')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'queue' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600' : 'text-slate-500'}`}>Task Queue ({complaints.queue.length})</button>
                     <button onClick={() => setTab('assigned')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'assigned' ? 'bg-white dark:bg-slate-700 shadow-sm text-orange-600' : 'text-slate-500'}`}>Assigned ({complaints.assigned.length})</button>
                     <button onClick={() => setTab('completed')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'completed' ? 'bg-white dark:bg-slate-700 shadow-sm text-green-600' : 'text-slate-500'}`}>Completed ({complaints.completed.length})</button>
+                    <button onClick={() => setTab('dismissed')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'dismissed' ? 'bg-white dark:bg-slate-700 shadow-sm text-red-600' : 'text-slate-500'}`}>Dismissed ({complaints.dismissed.length})</button>
                 </div>
             </div>
             
@@ -194,7 +218,7 @@ const ComplaintsQueue = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-darkBorder">
-                        {(tab === 'queue' ? complaints.queue : tab === 'assigned' ? complaints.assigned : complaints.completed).map(c => (
+                        {(tab === 'queue' ? complaints.queue : tab === 'assigned' ? complaints.assigned : tab === 'completed' ? complaints.completed : complaints.dismissed).map(c => (
                             <tr key={c._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                 <td className="p-4">
                                     <button onClick={() => setViewingComp(c)} className="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline decoration-blue-300 dark:decoration-blue-700 underline-offset-4 text-left">
@@ -214,7 +238,14 @@ const ComplaintsQueue = () => {
                                 </td>
                                 <td className="p-4">
                                     {tab === 'queue' ? (
-                                        <button onClick={() => setSelectedComp(c)} className="btn-primary py-1 px-3 text-sm">Assign</button>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button onClick={() => setSelectedComp(c)} className="btn-primary py-1.5 px-4 text-xs font-bold leading-none shadow-blue-500/20 flex items-center gap-1.5 transition-transform hover:-translate-y-0.5">
+                                                <UserCheck className="w-3.5 h-3.5" /> Assign
+                                            </button>
+                                            <button onClick={() => setDismissComp(c)} className="py-1.5 px-4 text-xs font-bold leading-none border border-red-200 text-red-600 hover:bg-red-600 hover:text-white dark:border-red-900/30 dark:hover:bg-red-600 dark:hover:text-white rounded-lg shadow-sm transition-all flex items-center gap-1.5 group hover:-translate-y-0.5">
+                                                <Trash2 className="w-3.5 h-3.5 text-red-400 group-hover:text-white transition-colors" /> Dismiss
+                                            </button>
+                                        </div>
                                     ) : tab === 'assigned' ? (
                                         <div>
                                             <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{c.assignedMaintainer?.name || 'Unknown'}</p>
@@ -286,6 +317,32 @@ const ComplaintsQueue = () => {
                             <div className="flex gap-2 pt-4">
                                 <button type="submit" className="flex-1 btn-primary py-3 px-6 shadow-md shadow-blue-500/20">Confirm Assignment</button>
                                 <button type="button" onClick={()=>setSelectedComp(null)} className="flex-1 py-3 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-slate-600 dark:text-slate-300 text-sm transition-all shadow-sm">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {dismissComp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={()=>setDismissComp(null)}>
+                    <div className="card p-6 w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 rounded-2xl" onClick={e=>e.stopPropagation()}>
+                        <h2 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">Dismiss Job</h2>
+                        <form onSubmit={handleDismissSubmit}>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Reason for Dismissal</label>
+                            <div className="space-y-3 mb-4">
+                                {['Inappropriate Content', 'Already Solved', 'Out of Scope', 'Not Enough Information', 'Other'].map(r => (
+                                    <label key={r} className="flex items-center gap-3 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 p-2 rounded transition-colors">
+                                        <input type="radio" name="dismissReason" value={r} checked={dismissReason === r} onChange={() => setDismissReason(r)} className="accent-red-500 w-4 h-4" />
+                                        <span className="font-medium text-slate-700 dark:text-slate-300">{r}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            {dismissReason === 'Other' && (
+                                <textarea required className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm mb-4 focus:ring-2 focus:ring-red-500 transition-all dark:text-white" placeholder="Enter custom reason..." value={customReason} onChange={e => setCustomReason(e.target.value)} rows={3} />
+                            )}
+                            <div className="flex gap-2 pt-2">
+                                <button type="submit" disabled={dismissing} className="flex-1 bg-red-600 text-white rounded-xl py-3 font-bold shadow-md hover:bg-red-700 transition disabled:opacity-70">{dismissing ? 'Dismissing...' : 'Confirm Dismissal'}</button>
+                                <button type="button" onClick={()=>setDismissComp(null)} className="flex-1 py-3 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -577,6 +634,90 @@ const QRGenerator = () => {
     );
 };
 
+// 7. Manage Maintainers Panel
+const ManageMaintainers = () => {
+    const [maintainers, setMaintainers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refresh, setRefresh] = useState(0);
+
+    const fetchMaintainers = async () => {
+        try {
+            const res = await api.get('/maintainers');
+            setMaintainers(res.data.data);
+        } catch (err) {
+            console.error('Fetch Maintainers Error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchMaintainers(); }, [refresh]);
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you SURE you want to permanently delete this maintainer account? This action cannot be undone.')) return;
+        try {
+            await api.delete(`/maintainers/${id}`);
+            setRefresh(prev => prev + 1);
+        } catch (err) {
+            alert(err?.response?.data?.error || 'Failed to delete maintainer');
+        }
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-200 dark:border-darkBorder pb-4">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">Manage Maintainers</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">View and permanently remove maintainer accounts assigned to your role.</p>
+                </div>
+                <Link to="/authority/add-maintainer" className="btn-primary py-2 px-6 flex items-center gap-2">
+                    <UserPlus className="w-4 h-4"/> Add New
+                </Link>
+            </div>
+
+            {loading ? (
+                <div className="p-12 text-center animate-pulse text-slate-400">Loading Maintainer Directory...</div>
+            ) : maintainers.length === 0 ? (
+                <div className="card p-12 text-center flex flex-col items-center">
+                    <Users className="w-16 h-16 text-slate-300 mb-4" />
+                    <h3 className="text-xl font-bold text-slate-600 dark:text-slate-400">No Maintainers Found</h3>
+                    <p className="text-slate-500 max-w-sm mx-auto mt-2">You haven't added any maintainers yet or none match your current responsibilities.</p>
+                </div>
+            ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {maintainers.map(m => (
+                        <div key={m._id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all border-l-4 border-l-blue-500 group">
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] rounded-full font-bold uppercase tracking-widest">{m.jobType}</span>
+                                <button onClick={() => handleDelete(m._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white truncate">{m.name}</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-mono mt-1">{m.phone}</p>
+                            
+                            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 grid grid-cols-2 gap-4">
+                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</p>
+                                    <p className="font-bold text-blue-600 dark:text-blue-400">{m.performanceScore.toFixed(1)}</p>
+                                </div>
+                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tasks</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">{m.totalTasksCompleted}</p>
+                                </div>
+                            </div>
+                            
+                            <button onClick={() => handleDelete(m._id)} className="w-full mt-4 py-3 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 md:hidden">
+                                <Trash2 className="w-4 h-4"/> Remove Permanently
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Main Export
 const AuthorityMain = () => {
   return (
@@ -588,6 +729,7 @@ const AuthorityMain = () => {
           <Route path="queue" element={<ComplaintsQueue />} />
           <Route path="approvals" element={<MaintainerApprovals />} />
           <Route path="add-maintainer" element={<AddMaintainerPanel />} />
+          <Route path="manage-maintainers" element={<ManageMaintainers />} />
           <Route path="reports" element={<div className="max-w-4xl mx-auto p-8 animate-fade-in"><div className="card p-10 text-center flex flex-col items-center shadow-sm rounded-xl border border-slate-100 dark:border-slate-800"><FileText className="w-16 h-16 text-blue-500 mb-4 opacity-80"/><h1 className="text-3xl font-bold mb-4 font-jakarta">Monthly PDF Reports</h1><p className="text-slate-500 max-w-md mx-auto mb-8">Download a comprehensive PDF summarizing the resolution rates, maintenance costs, and SLA adherence across all campus sectors.</p><a href="/api/analytics/report" target="_blank" rel="noreferrer" className="btn-primary py-3 px-8 text-lg font-bold shadow-md inline-flex items-center gap-3"><Download className="w-5 h-5"/> Generate Full System Report</a></div></div>} />
           <Route path="qr" element={<QRGenerator />} />
         </Routes>

@@ -96,7 +96,9 @@ PROBLEM indicators:
 {
 "categories": ["Category1", "Category2"],
 "priority": "Low | Medium | High | Urgent",
-"estimatedFixTimeHours": number
+"estimatedFixTimeHours": number,
+"isInappropriate": boolean,
+"safetyReason": "Detailed reason if flagged as inappropriate, else null"
 }
 
 ---
@@ -122,6 +124,25 @@ Output:
   "priority": "Urgent",
   "estimatedFixTimeHours": 2
 }
+
+---
+
+---
+
+### SAFETY & DECORUM RULE (CRITICAL):
+
+* You MUST detect if the complaint contains:
+  → Profanity or Abusive language (English or Hindi/Hinglish).
+  → Vulgar or sexually explicit content.
+  → Disrespectful or threatening language towards college authorities.
+  → Spam or completely irrelevant/gibberish content.
+
+* If any of the above are detected:
+  → Set "isInappropriate" to true.
+  → Provide the reason in "safetyReason".
+* Otherwise:
+  → Set "isInappropriate" to false.
+  → Set "safetyReason" to null.
 
 ---
 

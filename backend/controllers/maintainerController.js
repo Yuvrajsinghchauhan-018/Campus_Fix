@@ -74,9 +74,53 @@ exports.rejectMaintainer = async (req, res) => {
   }
 };
 
+exports.deleteMaintainer = async (req, res) => {
+  try {
+    const maintainer = await User.findById(req.params.id);
+    if (!maintainer || maintainer.role !== 'maintainer') {
+      return res.status(404).json({ success: false, error: 'Maintainer not found' });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    
+    const io = req.app.get('socketio');
+    if (io) io.emit('maintainer_update');
+
+    res.status(200).json({ success: true, data: {} });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 exports.getApprovedMaintainers = async (req, res) => {
   try {
-    const maintainers = await User.find({ role: 'maintainer', approvalStatus: { $in: ['approved', 'Approved'] } }).select('-password');
+    let query = { role: 'maintainer', approvalStatus: { $in: ['approved', 'Approved'] } };
+    
+    // If called by an authority, filter by their responsibilities
+    if (req.user && req.user.role === 'authority') {
+      const admin = await User.findById(req.user.id);
+      if (admin && admin.responsibilities && admin.responsibilities.length > 0) {
+        // Map admin responsibilities to maintainer job types
+        const typeMap = {
+          'Electrical': ['Electrician'],
+          'Plumbing': ['Plumber'],
+          'IT Systems': ['IT Technician'],
+          'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'],
+          'Lab Management': ['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'] // Labs might need any
+        };
+        
+        let allowedTypes = [];
+        admin.responsibilities.forEach(resp => {
+          if (typeMap[resp]) allowedTypes = [...allowedTypes, ...typeMap[resp]];
+        });
+        
+        if (allowedTypes.length > 0) {
+          query.jobType = { $in: [...new Set(allowedTypes)] };
+        }
+      }
+    }
+
+    const maintainers = await User.find(query).select('-password');
     res.status(200).json({ success: true, data: maintainers });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

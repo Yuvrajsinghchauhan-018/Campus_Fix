@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import StudentDashboard from './pages/student/StudentDashboard';
 import AuthorityDashboard from './pages/authority/AuthorityDashboard';
 import MaintainerDashboard from './pages/maintainer/MaintainerDashboard';
+import Profile from './pages/common/Profile';
 
 // Component imports
 import Navbar from './components/common/Navbar';
@@ -70,6 +71,12 @@ function App() {
                 <ApprovedRoute>
                   <MaintainerDashboard />
                 </ApprovedRoute>
+              </PrivateRoute>
+            } />
+            
+            <Route path="/profile" element={
+              <PrivateRoute>
+                <Profile />
               </PrivateRoute>
             } />
             

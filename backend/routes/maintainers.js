@@ -5,7 +5,8 @@ const {
   approveMaintainer, 
   rejectMaintainer, 
   getApprovedMaintainers,
-  createMaintainer
+  createMaintainer,
+  deleteMaintainer
 } = require('../controllers/maintainerController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -17,5 +18,6 @@ router.get('/pending', getPendingMaintainers);
 router.patch('/:id/approve', approveMaintainer);
 router.patch('/:id/reject', rejectMaintainer);
 router.get('/', getApprovedMaintainers);
+router.delete('/:id', deleteMaintainer);
 
 module.exports = router;
