@@ -35,9 +35,9 @@ const Navbar = () => {
                   <Bell className="w-5 h-5 cursor-pointer text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors" />
                 </div>
                 <div className="flex items-center gap-2 pl-4 border-l border-slate-300 dark:border-darkBorder">
-                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                  </div>
+                  <Link to="/profile" title="View Profile" className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group">
+                    <UserIcon className="w-4 h-4 text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                  </Link>
                   <button onClick={handleLogout} className="text-sm text-red-500 hover:text-red-600 font-medium ml-2 flex items-center gap-1">
                     <LogOut className="w-4 h-4" />
                     Exit
