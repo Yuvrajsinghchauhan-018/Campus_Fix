@@ -16,6 +16,15 @@ exports.createComplaint = async (req, res) => {
 
     const aiResult = await analyzeComplaint(title, description);
 
+    // AI Safety Check
+    if (aiResult && aiResult.isInappropriate) {
+      return res.status(400).json({ 
+        success: false, 
+        isWarning: true,
+        message: `STRICT WARNING: Your complaint has been flagged as inappropriate/vulgar. Reason: ${aiResult.safetyReason}. This incident may be reported to college administration. Please maintain decorum while using this platform.` 
+      });
+    }
+
     // Dynamic Validation and Mapping of AI Arrays
     let rawCategories = (aiResult && aiResult.categories && Array.isArray(aiResult.categories)) ? aiResult.categories : [];
     
