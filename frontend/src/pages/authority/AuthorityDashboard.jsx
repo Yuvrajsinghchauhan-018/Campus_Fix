@@ -639,6 +639,8 @@ const ManageMaintainers = () => {
     const [maintainers, setMaintainers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refresh, setRefresh] = useState(0);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     const fetchMaintainers = async () => {
         try {
@@ -653,13 +655,17 @@ const ManageMaintainers = () => {
 
     useEffect(() => { fetchMaintainers(); }, [refresh]);
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you SURE you want to permanently delete this maintainer account? This action cannot be undone.')) return;
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleting(true);
         try {
-            await api.delete(`/maintainers/${id}`);
+            await api.delete(`/maintainers/${deleteTarget._id}`);
+            setDeleteTarget(null);
             setRefresh(prev => prev + 1);
         } catch (err) {
             alert(err?.response?.data?.error || 'Failed to delete maintainer');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -686,32 +692,90 @@ const ManageMaintainers = () => {
             ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {maintainers.map(m => (
-                        <div key={m._id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all border-l-4 border-l-blue-500 group">
-                            <div className="flex justify-between items-start mb-4">
-                                <span className="px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] rounded-full font-bold uppercase tracking-widest">{m.jobType}</span>
-                                <button onClick={() => handleDelete(m._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100">
-                                    <Trash2 className="w-5 h-5" />
+                        <div key={m._id} className="relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-6 rounded-[2rem] shadow-lg hover:shadow-2xl hover:shadow-blue-500/20 dark:hover:shadow-blue-900/40 transition-all duration-500 group hover:-translate-y-2 ring-1 ring-slate-100 dark:ring-white/5 hover:ring-blue-500/30">
+                            {/* Decorative Background Gradients */}
+                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-400/20 to-purple-500/20 dark:from-blue-500/20 dark:to-purple-500/20 rounded-full blur-3xl transform group-hover:scale-150 transition-transform duration-700 ease-out"></div>
+                            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-tr from-emerald-400/20 to-teal-500/20 dark:from-emerald-500/20 dark:to-teal-500/20 rounded-full blur-2xl transform group-hover:scale-150 transition-transform duration-700 ease-out"></div>
+                            
+                            <div className="relative z-10 flex justify-between items-start mb-6">
+                                <span className="px-4 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 dark:from-blue-900/40 dark:to-indigo-900/40 dark:text-blue-300 text-[10px] rounded-full font-bold uppercase tracking-widest border border-blue-100 dark:border-blue-800/50 shadow-sm">{m.jobType}</span>
+                                <button onClick={() => setDeleteTarget(m)} className="p-2.5 bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/40 dark:hover:text-red-400 rounded-full transition-all duration-300 shadow-sm border border-slate-100 dark:border-slate-700 opacity-0 group-hover:opacity-100 transform hover:scale-110">
+                                    <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
-                            <h3 className="text-xl font-bold text-slate-800 dark:text-white truncate">{m.name}</h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-mono mt-1">{m.phone}</p>
                             
-                            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 grid grid-cols-2 gap-4">
-                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</p>
-                                    <p className="font-bold text-blue-600 dark:text-blue-400">{m.performanceScore.toFixed(1)}</p>
+                            <div className="relative z-10">
+                                <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 truncate mb-1">
+                                    {m.name}
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-xs font-mono font-medium tracking-wider flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                    {m.phone}
+                                </p>
+                            </div>
+                            
+                            <div className="relative z-10 mt-8 grid grid-cols-2 gap-4">
+                                <div className="text-center p-4 bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner transition-colors group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/20">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Score</p>
+                                    <p className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">{m.performanceScore.toFixed(1)}</p>
                                 </div>
-                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tasks</p>
-                                    <p className="font-bold text-slate-700 dark:text-slate-300">{m.totalTasksCompleted}</p>
+                                <div className="text-center p-4 bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner transition-colors group-hover:bg-emerald-50/50 dark:group-hover:bg-emerald-900/20">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tasks</p>
+                                    <p className="font-bold text-xl text-slate-700 dark:text-slate-200">{m.totalTasksCompleted}</p>
                                 </div>
                             </div>
                             
-                            <button onClick={() => handleDelete(m._id)} className="w-full mt-4 py-3 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 md:hidden">
-                                <Trash2 className="w-4 h-4"/> Remove Permanently
+                            <button onClick={() => setDeleteTarget(m)} className="relative z-10 w-full mt-4 py-3 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 md:hidden border border-red-100 dark:border-red-900/30">
+                                <Trash2 className="w-4 h-4"/> Remove
                             </button>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Custom Premium Deletion Modal */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 animate-fade-in">
+                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md cursor-pointer" onClick={() => setDeleteTarget(null)}></div>
+                    <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden transform transition-all animate-scale-in">
+                        {/* Decorative Background in Modal */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+                        
+                        <div className="relative z-10">
+                            <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100 dark:border-red-800/50 shadow-inner">
+                                <Trash2 className="w-10 h-10 text-red-500 animate-bounce-slow" />
+                            </div>
+                            
+                            <h3 className="text-2xl font-black text-center text-slate-800 dark:text-white mb-3 font-jakarta">Confirm Deletion</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-center text-sm font-medium leading-relaxed mb-8">
+                                Are you sure you want to permanently remove <span className="text-red-500 font-bold font-mono">@{deleteTarget.name}</span>? This action is IRREVERSIBLE.
+                            </p>
+                            
+                            <div className="flex flex-col gap-3">
+                                <button 
+                                    onClick={handleConfirmDelete} 
+                                    disabled={deleting}
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-1"
+                                >
+                                    {deleting ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            Purging Account...
+                                        </>
+                                    ) : (
+                                        'Yes, Delete Permanently'
+                                    )}
+                                </button>
+                                <button 
+                                    onClick={() => setDeleteTarget(null)} 
+                                    className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 py-4 rounded-2xl font-bold transition-all"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
