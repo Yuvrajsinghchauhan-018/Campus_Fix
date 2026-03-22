@@ -25,10 +25,13 @@ const Sidebar = () => {
            <Link to="/authority/approvals" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/approvals' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <Users className="w-5 h-5" /> Maintainer Approvals
            </Link>
-           <Link to="/authority/add-maintainer" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/add-maintainer' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-              <UserPlus className="w-5 h-5" /> Add Maintainer
-           </Link>
-           <Link to="/authority/reports" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/reports' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+            <Link to="/authority/add-maintainer" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/add-maintainer' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+               <UserPlus className="w-5 h-5" /> Add Maintainer
+            </Link>
+            <Link to="/authority/manage-maintainers" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/manage-maintainers' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+               <Users className="w-5 h-5" /> Manage Maintainers
+            </Link>
+            <Link to="/authority/reports" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/reports' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <FileText className="w-5 h-5" /> PDF Reports
            </Link>
            <Link to="/authority/qr" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/qr' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -631,6 +634,90 @@ const QRGenerator = () => {
     );
 };
 
+// 7. Manage Maintainers Panel
+const ManageMaintainers = () => {
+    const [maintainers, setMaintainers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refresh, setRefresh] = useState(0);
+
+    const fetchMaintainers = async () => {
+        try {
+            const res = await api.get('/maintainers');
+            setMaintainers(res.data.data);
+        } catch (err) {
+            console.error('Fetch Maintainers Error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchMaintainers(); }, [refresh]);
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you SURE you want to permanently delete this maintainer account? This action cannot be undone.')) return;
+        try {
+            await api.delete(`/maintainers/${id}`);
+            setRefresh(prev => prev + 1);
+        } catch (err) {
+            alert(err?.response?.data?.error || 'Failed to delete maintainer');
+        }
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative">
+            <div className="flex justify-between items-center mb-8 border-b border-slate-200 dark:border-darkBorder pb-4">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">Manage Maintainers</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">View and permanently remove maintainer accounts assigned to your role.</p>
+                </div>
+                <Link to="/authority/add-maintainer" className="btn-primary py-2 px-6 flex items-center gap-2">
+                    <UserPlus className="w-4 h-4"/> Add New
+                </Link>
+            </div>
+
+            {loading ? (
+                <div className="p-12 text-center animate-pulse text-slate-400">Loading Maintainer Directory...</div>
+            ) : maintainers.length === 0 ? (
+                <div className="card p-12 text-center flex flex-col items-center">
+                    <Users className="w-16 h-16 text-slate-300 mb-4" />
+                    <h3 className="text-xl font-bold text-slate-600 dark:text-slate-400">No Maintainers Found</h3>
+                    <p className="text-slate-500 max-w-sm mx-auto mt-2">You haven't added any maintainers yet or none match your current responsibilities.</p>
+                </div>
+            ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {maintainers.map(m => (
+                        <div key={m._id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all border-l-4 border-l-blue-500 group">
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] rounded-full font-bold uppercase tracking-widest">{m.jobType}</span>
+                                <button onClick={() => handleDelete(m._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white truncate">{m.name}</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-mono mt-1">{m.phone}</p>
+                            
+                            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 grid grid-cols-2 gap-4">
+                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</p>
+                                    <p className="font-bold text-blue-600 dark:text-blue-400">{m.performanceScore.toFixed(1)}</p>
+                                </div>
+                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tasks</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">{m.totalTasksCompleted}</p>
+                                </div>
+                            </div>
+                            
+                            <button onClick={() => handleDelete(m._id)} className="w-full mt-4 py-3 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 md:hidden">
+                                <Trash2 className="w-4 h-4"/> Remove Permanently
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Main Export
 const AuthorityMain = () => {
   return (
@@ -642,6 +729,7 @@ const AuthorityMain = () => {
           <Route path="queue" element={<ComplaintsQueue />} />
           <Route path="approvals" element={<MaintainerApprovals />} />
           <Route path="add-maintainer" element={<AddMaintainerPanel />} />
+          <Route path="manage-maintainers" element={<ManageMaintainers />} />
           <Route path="reports" element={<div className="max-w-4xl mx-auto p-8 animate-fade-in"><div className="card p-10 text-center flex flex-col items-center shadow-sm rounded-xl border border-slate-100 dark:border-slate-800"><FileText className="w-16 h-16 text-blue-500 mb-4 opacity-80"/><h1 className="text-3xl font-bold mb-4 font-jakarta">Monthly PDF Reports</h1><p className="text-slate-500 max-w-md mx-auto mb-8">Download a comprehensive PDF summarizing the resolution rates, maintenance costs, and SLA adherence across all campus sectors.</p><a href="/api/analytics/report" target="_blank" rel="noreferrer" className="btn-primary py-3 px-8 text-lg font-bold shadow-md inline-flex items-center gap-3"><Download className="w-5 h-5"/> Generate Full System Report</a></div></div>} />
           <Route path="qr" element={<QRGenerator />} />
         </Routes>
