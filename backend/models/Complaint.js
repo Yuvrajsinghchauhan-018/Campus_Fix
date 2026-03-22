@@ -3,11 +3,10 @@ const mongoose = require('mongoose');
 const ComplaintSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  category: { 
+  categories: [{ 
     type: String, 
-    enum: ['Electrical', 'Plumbing', 'Furniture', 'Computer', 'AC', 'Carpentry', 'Other'],
-    required: true
-  },
+    enum: ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure']
+  }],
   priority: { 
     type: String, 
     enum: ['Low', 'Medium', 'High', 'Urgent'],
@@ -22,12 +21,19 @@ const ComplaintSchema = new mongoose.Schema({
     enum: ['Pending', 'Assigned', 'Accepted', 'In Progress', 'Resolved', 'Rejected'],
     default: 'Pending'
   },
+  locationType: { 
+    type: String, 
+    enum: ['Lab', 'Classroom'],
+    default: 'Classroom'
+  },
   roomNumber: { type: String, required: true },
-  block: { type: String, required: true },
+  block: { type: String, enum: ['MSI', 'MSIT', 'MBA'], required: true },
   floor: { type: String, required: true },
   photos: [{ type: String }],
   submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedMaintainer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedAdmins: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  assignmentReason: { type: String },
   department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
   deadline: { type: Date },
   resolvedAt: { type: Date },

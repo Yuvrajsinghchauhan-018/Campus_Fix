@@ -34,7 +34,7 @@ const PublicRoute = ({ children }) => {
 
 const ApprovedRoute = ({ children }) => {
   const { user } = useAuth();
-  if (user?.role === 'maintainer' && user?.approvalStatus !== 'approved') {
+  if (user?.role === 'maintainer' && user?.approvalStatus?.toLowerCase() !== 'approved') {
     return <div className="min-h-screen flex items-center justify-center text-center p-6"><div className="card p-8 max-w-md"><h2 className="text-2xl font-bold mb-4 text-orange-500">Pending Approval</h2><p>Your account is currently under review by the administration. You will be notified once approved.</p></div></div>;
   }
   return children;

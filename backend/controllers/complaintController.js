@@ -7,32 +7,113 @@ const { analyzeComplaint } = require('../utils/aiPriority');
 // @access  Private/Student
 exports.createComplaint = async (req, res) => {
   try {
-    const { title, description, category, priority, roomNumber, block, floor } = req.body;
+    const { title, description, locationType, roomNumber, block, floor } = req.body;
     let photos = [];
     
     if (req.files && req.files.length > 0) {
-      photos = req.files.map(file => file.path || `https://via.placeholder.com/600x400?text=Local+Upload+Ignored`);
+      photos = req.files.map(file => `/uploads/${file.filename}`);
     }
 
     const aiResult = await analyzeComplaint(title, description);
 
+    // Dynamic Validation and Mapping of AI Arrays
+    let rawCategories = (aiResult && aiResult.categories && Array.isArray(aiResult.categories)) ? aiResult.categories : [];
+    
+    // Explicit Overrides
+    if (locationType === 'Lab') rawCategories.push('Lab Management');
+    
+    // Intelligent Keyword Fallbacks to guarantee exact routing bounds
+    const combinedText = `${title} ${description}`.toLowerCase();
+    
+    if (combinedText.includes('lab')) {
+      rawCategories.push('Lab Management');
+    }
+    if (combinedText.includes('projector') || combinedText.includes('computer') || combinedText.includes('system') || combinedText.includes('network') || combinedText.includes('internet') || combinedText.includes('wifi')) {
+      rawCategories.push('IT Systems');
+    }
+    if (combinedText.includes('ac') || combinedText.includes('fan') || combinedText.includes('bench') || combinedText.includes('wall') || combinedText.includes('infrastructure') || combinedText.includes('door') || combinedText.includes('window')) {
+      rawCategories.push('Infrastructure');
+    }
+    if (combinedText.includes('wire') || combinedText.includes('spark') || combinedText.includes('switch') || combinedText.includes('electrical') || combinedText.includes('light')) {
+      rawCategories.push('Electrical');
+    }
+    if (combinedText.includes('water') || combinedText.includes('leak') || combinedText.includes('pipe') || combinedText.includes('plumbing') || combinedText.includes('tap') || combinedText.includes('sink')) {
+      rawCategories.push('Plumbing');
+    }
+
+    // Clean, Verify, Deduplicate, Slice
+    const validEnums = ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure'];
+    let finalCategories = [...new Set(rawCategories.filter(c => validEnums.includes(c)))].slice(0, 3);
+    
+    // Strict Global Fallback
+    if (finalCategories.length === 0) finalCategories = ['Infrastructure'];
+
+    const formatPriority = (p) => {
+        if (!p) return 'Low';
+        const str = p.toString().toLowerCase();
+        if (str.includes('urgent')) return 'Urgent';
+        if (str.includes('high')) return 'High';
+        if (str.includes('medium')) return 'Medium';
+        return 'Low';
+    };
+    const finalPriority = formatPriority(aiResult && aiResult.priority);
+    
+    // Fetch all authorities
+    const authorities = await User.find({ role: 'authority' });
+    let assignedAdmins = [];
+    let assignmentReason = '';
+
+    if (authorities.length > 0) {
+      // Strategy 1: Perfect Match (Floor + Any Matching Category)
+      let matches = authorities.filter(a => a.floors && a.floors.includes(floor) && a.responsibilities && finalCategories.some(cat => a.responsibilities.includes(cat)));
+      
+      if (matches.length > 0) {
+        assignedAdmins = matches.map(m => m._id);
+        assignmentReason = `Matched ${matches.length} admin(s) for overlapping categories ${JSON.stringify(finalCategories)} on ${floor}.`;
+      } else {
+        // Strategy 2: Category Match (Any floor)
+        matches = authorities.filter(a => a.responsibilities && finalCategories.some(cat => a.responsibilities.includes(cat)));
+        if (matches.length > 0) {
+          assignedAdmins = matches.map(m => m._id);
+          assignmentReason = `Fallback: No admin on ${floor}. Routed to ${matches.length} admin(s) handling ${JSON.stringify(finalCategories)}.`;
+        } else {
+          // Strategy 3: Floor Match (Any category)
+          matches = authorities.filter(a => a.floors && a.floors.includes(floor));
+          if (matches.length > 0) {
+            assignedAdmins = matches.map(m => m._id);
+            assignmentReason = `Fallback: No domain match. Routed to ${matches.length} admin(s) on ${floor}.`;
+          } else {
+            // Strategy 4: Universal Broadcast
+            assignedAdmins = authorities.map(m => m._id);
+            assignmentReason = `System broadcast: No exact match found. Routed to all ${authorities.length} admins.`;
+          }
+        }
+      }
+    } else {
+      assignmentReason = "No authority accounts currently exist in the system.";
+    }
+
     const complaint = await Complaint.create({
       title,
       description,
-      category,
-      priority,
+      categories: finalCategories,
+      priority: finalPriority,
       aiSuggestedPriority: aiResult ? aiResult.priority : null,
       aiSuggestedCategory: aiResult ? aiResult.category : null,
       aiReason: aiResult ? aiResult.reason : null,
       aiEstimatedFixTime: aiResult ? aiResult.estimatedFixTimeHours : null,
+      locationType: locationType || 'Classroom',
       roomNumber,
       block,
       floor,
       photos,
-      submittedBy: req.user.id
+      submittedBy: req.user.id,
+      assignedAdmins,
+      assignmentReason
     });
 
-    // io logic can be added here or from req.app.get('socketio')
+    const io = req.app.get('socketio');
+    if (io) io.emit('complaint_update', { action: 'create', block: complaint.block });
 
     res.status(201).json({ success: true, data: complaint });
   } catch (error) {
@@ -49,12 +130,20 @@ exports.getComplaints = async (req, res) => {
     if (req.user.role === 'student') {
       query.submittedBy = req.user.id;
     } else if (req.user.role === 'maintainer') {
-      query.assignedTo = req.user.id;
+      // Maintainers should only see explicitly assigned workloads and history
+      query.assignedMaintainer = req.user.id;
+    } else if (req.user.role === 'authority') {
+      const admin = await User.findById(req.user.id);
+      query.categories = { $in: admin.responsibilities };
+      query.block = admin.block;
+      if (admin.floors && admin.floors.length > 0) {
+        query.floor = { $in: admin.floors };
+      }
     }
     
     const complaints = await Complaint.find(query)
       .populate('submittedBy', 'name email collegeId')
-      .populate('assignedTo', 'name email jobType')
+      .populate('assignedMaintainer', 'name email jobType')
       .sort('-createdAt');
       
     res.status(200).json({ success: true, data: complaints });
@@ -70,7 +159,7 @@ exports.getComplaint = async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id)
       .populate('submittedBy', 'name email collegeId phone')
-      .populate('assignedTo', 'name email jobType phone');
+      .populate('assignedMaintainer', 'name email jobType phone');
 
     if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
 
@@ -85,12 +174,12 @@ exports.getComplaint = async (req, res) => {
 // @access  Private/Authority
 exports.approveAndAssign = async (req, res) => {
   try {
-    const { assignedTo, deadline, internalNote } = req.body;
+    const { assignedMaintainer, deadline, internalNote } = req.body;
     
     let complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
 
-    complaint.assignedTo = assignedTo;
+    complaint.assignedMaintainer = assignedMaintainer;
     complaint.deadline = deadline;
     complaint.status = 'Assigned';
     if(internalNote) complaint.resolutionNote = internalNote;
@@ -98,6 +187,8 @@ exports.approveAndAssign = async (req, res) => {
     await complaint.save();
 
     // Socket io alert later
+    const io = req.app.get('socketio');
+    if (io) io.emit('complaint_update', { action: 'assign' });
     
     res.status(200).json({ success: true, data: complaint });
   } catch (error) {
@@ -118,6 +209,9 @@ exports.updateStatus = async (req, res) => {
     complaint.status = status;
     await complaint.save();
     
+    const io = req.app.get('socketio');
+    if (io) io.emit('complaint_update', { action: 'status' });
+
     res.status(200).json({ success: true, data: complaint });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -130,7 +224,7 @@ exports.updateStatus = async (req, res) => {
 exports.resolveComplaint = async (req, res) => {
   try {
     const { resolutionNote } = req.body;
-    let completionPhoto = req.file ? (req.file.path || `https://via.placeholder.com/600x400?text=Local+Upload+Ignored`) : null;
+    let completionPhoto = req.file ? `/uploads/${req.file.filename}` : null;
     
     let complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
@@ -146,6 +240,9 @@ exports.resolveComplaint = async (req, res) => {
     const maintainer = await User.findById(req.user.id);
     maintainer.totalTasksCompleted += 1;
     await maintainer.save();
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('complaint_update', { action: 'resolve' });
 
     res.status(200).json({ success: true, data: complaint });
   } catch (error) {
@@ -167,8 +264,8 @@ exports.rateComplaint = async (req, res) => {
     complaint.feedback = feedback;
     await complaint.save();
     
-    if (complaint.assignedTo) {
-      const maintainer = await User.findById(complaint.assignedTo);
+    if (complaint.assignedMaintainer) {
+      const maintainer = await User.findById(complaint.assignedMaintainer);
       // naive average mapping
       maintainer.performanceScore = ((maintainer.performanceScore * (maintainer.totalTasksCompleted - 1)) + Number(rating)) / maintainer.totalTasksCompleted;
       await maintainer.save();

@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const startCronJobs = require('./utils/cronJobs');
@@ -39,6 +40,9 @@ app.use(express.json());
 
 // Enable CORS
 app.use(cors());
+
+// Expose Static Uploads Directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', (req, res) => {
   res.send('CampusFix API is running...');

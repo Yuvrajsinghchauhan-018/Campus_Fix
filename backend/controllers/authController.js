@@ -15,10 +15,26 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role, collegeId, phone, gender, jobType } = req.body;
+    const { name, email, password, role, collegeId, phone, gender, jobType, adminSecretKey, floor, responsibilities, block } = req.body;
 
     if (role === 'authority') {
-      return res.status(403).json({ message: "Registration restricted for authorities." });
+      if (!name || !email || !phone || !adminSecretKey) {
+        return res.status(400).json({ message: "Name, email, phone, and Admin Secret Key are required." });
+      }
+      if (adminSecretKey !== process.env.ADMIN_SECRET_KEY) {
+        return res.status(401).json({ message: "Invalid Admin Secret Key." });
+      }
+      const existingEmail = await User.findOne({ email: email.toLowerCase() });
+      if (existingEmail) return res.status(400).json({ message: "Email already registered." });
+
+      const user = await User.create({
+        name, phone, role, email: email.toLowerCase(), floors, responsibilities, block,
+        isApproved: true,
+        approvalStatus: 'Approved'
+      });
+
+      const token = generateToken(user._id);
+      return res.status(201).json({ success: true, token, user: { id: user._id, name: user.name, role: user.role }, message: "Registration successful!" });
     }
 
     if (!name || !phone || !role) {
@@ -86,11 +102,15 @@ exports.login = async (req, res) => {
   try {
     const { email, collegeId, phone, password, role } = req.body;
 
-    // 1. Authority Login (Email/Pass only - Direct)
+    // 1. Authority Login (Email/Admin Secret Key only - Direct)
     if (role === 'authority') {
-      if (!email || !password) return res.status(400).json({ message: "Email and password required." });
-      const user = await User.findOne({ email: email.toLowerCase(), role: 'authority' }).select('+password');
-      if (!user || !(await user.matchPassword(password))) {
+      const secretKey = req.body.adminSecretKey || password; // Frontend might send it as password or adminSecretKey
+      if (!email || !secretKey) return res.status(400).json({ message: "Email and Admin Secret Key required." });
+      if (secretKey !== process.env.ADMIN_SECRET_KEY) {
+        return res.status(401).json({ message: "Invalid Admin Secret Key." });
+      }
+      const user = await User.findOne({ email: email.toLowerCase(), role: 'authority' });
+      if (!user) {
         return res.status(401).json({ message: "Invalid authority credentials." });
       }
       const token = generateToken(user._id);
@@ -116,18 +136,32 @@ exports.login = async (req, res) => {
     // 3. Maintainer Login (Phone only - Direct)
     if (role === 'maintainer') {
       if (!phone) return res.status(400).json({ message: "Phone number required." });
-      const user = await User.findOne({ phone, role: 'maintainer' });
-      if (!user) return res.status(404).json({ message: "No account found with this phone number." });
+      let user = await User.findOne({ phone, role: 'maintainer' });
       
-      if (user.approvalStatus === 'pending') {
-        return res.status(403).json({ message: "Your account is still under review." });
+      if (!user) {
+        return res.status(404).json({ message: "No account found. Ask authority to add you or request access via Registration." });
       }
-      if (user.approvalStatus === 'rejected') {
+      
+      const status = user.approvalStatus.toLowerCase();
+      if (status === 'pending') {
+        return res.status(403).json({ message: "Waiting for approval" });
+      }
+      if (status === 'rejected') {
         return res.status(403).json({ message: "Your application was not approved." });
       }
 
       const token = generateToken(user._id);
-      return res.status(200).json({ success: true, token, user: { id: user._id, name: user.name, role: user.role } });
+      return res.status(200).json({ 
+        success: true, 
+        token, 
+        user: { 
+          id: user._id, 
+          name: user.name, 
+          role: user.role, 
+          approvalStatus: user.approvalStatus, 
+          isApproved: user.isApproved 
+        } 
+      });
     }
     res.status(400).json({ message: "Invalid role specified." });
   } catch (error) {
