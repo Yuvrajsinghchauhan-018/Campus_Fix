@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import api, { STATIC_BASE_URL } from '../../api/axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, LayoutDashboard, LogOut, UserPlus, X, Image as ImageIcon } from 'lucide-react';
+import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, LayoutDashboard, LogOut, UserPlus, X, Image as ImageIcon, Trash2, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
@@ -149,8 +149,8 @@ const ComplaintsQueue = () => {
         const mRes = await api.get('/maintainers');
         const allComps = cRes.data.data || [];
         setComplaints({
-            queue: allComps.filter(c => !c.assignedMaintainer && c.status !== 'Resolved' && c.status !== 'Rejected'),
-            assigned: allComps.filter(c => c.assignedMaintainer && c.status !== 'Resolved' && c.status !== 'Rejected'),
+            queue: allComps.filter(c => c.status === 'Pending'),
+            assigned: allComps.filter(c => ['Assigned', 'Accepted', 'In Progress'].includes(c.status)),
             completed: allComps.filter(c => c.status === 'Resolved'),
             dismissed: allComps.filter(c => c.status === 'Rejected')
         });
@@ -236,8 +236,12 @@ const ComplaintsQueue = () => {
                                 <td className="p-4">
                                     {tab === 'queue' ? (
                                         <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => setSelectedComp(c)} className="btn-primary py-1 px-3 text-sm">Assign</button>
-                                            <button onClick={() => setDismissComp(c)} className="py-1 px-3 text-sm border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20 rounded shadow-sm transition">Dismiss</button>
+                                            <button onClick={() => setSelectedComp(c)} className="btn-primary py-1.5 px-4 text-xs font-bold leading-none shadow-blue-500/20 flex items-center gap-1.5 transition-transform hover:-translate-y-0.5">
+                                                <UserCheck className="w-3.5 h-3.5" /> Assign
+                                            </button>
+                                            <button onClick={() => setDismissComp(c)} className="py-1.5 px-4 text-xs font-bold leading-none border border-red-200 text-red-600 hover:bg-red-600 hover:text-white dark:border-red-900/30 dark:hover:bg-red-600 dark:hover:text-white rounded-lg shadow-sm transition-all flex items-center gap-1.5 group hover:-translate-y-0.5">
+                                                <Trash2 className="w-3.5 h-3.5 text-red-400 group-hover:text-white transition-colors" /> Dismiss
+                                            </button>
                                         </div>
                                     ) : tab === 'assigned' ? (
                                         <div>
