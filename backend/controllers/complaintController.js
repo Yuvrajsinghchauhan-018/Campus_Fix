@@ -142,10 +142,10 @@ exports.getComplaints = async (req, res) => {
   try {
     let query = {};
     if (req.user.role === 'student') {
-      query.submittedBy = req.user.id;
+      query.submittedBy = req.user._id;
     } else if (req.user.role === 'maintainer') {
       // Maintainers should only see explicitly assigned workloads and history
-      query.assignedMaintainer = req.user.id;
+      query.assignedMaintainer = req.user._id;
     } else if (req.user.role === 'authority') {
       const admin = await User.findById(req.user.id);
       query.categories = { $in: admin.responsibilities };
@@ -199,7 +199,10 @@ exports.approveAndAssign = async (req, res) => {
     let complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
 
-    complaint.assignedMaintainer = assignedMaintainer;
+    const maintainer = await User.findById(assignedMaintainer);
+    if (!maintainer || maintainer.role !== 'maintainer') return res.status(404).json({ success: false, error: 'Maintainer not found' });
+
+    complaint.assignedMaintainer = maintainer._id;
     complaint.deadline = deadline;
     complaint.status = 'Assigned';
     if(internalNote) complaint.resolutionNote = internalNote;

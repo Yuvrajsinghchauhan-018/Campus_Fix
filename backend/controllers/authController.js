@@ -139,7 +139,7 @@ exports.login = async (req, res) => {
       let user = await User.findOne({ phone, role: 'maintainer' });
       
       if (!user) {
-        return res.status(404).json({ message: "No account found. Ask authority to add you or request access via Registration." });
+        return res.status(404).json({ message: "User not found or account removed" });
       }
       
       const status = user.approvalStatus.toLowerCase();
@@ -178,7 +178,7 @@ exports.requestOTP = async (req, res) => {
     if (!phone) return res.status(400).json({ message: "Phone number is required." });
 
     const user = await User.findOne({ phone, role: 'maintainer' });
-    if (!user) return res.status(404).json({ message: "No account found with this phone number." });
+    if (!user) return res.status(404).json({ message: "User not found or account removed" });
 
     const otp = generateOTP();
     try {
@@ -230,7 +230,7 @@ exports.verifyOTP = async (req, res) => {
     } else {
       // Maintainer Login Finalize
       const user = await User.findOne({ phone, role: 'maintainer' });
-      if (!user) return res.status(404).json({ message: "User not found." });
+      if (!user) return res.status(404).json({ message: "User not found or account removed" });
 
       if (user.approvalStatus === 'pending') {
         return res.status(403).json({ message: "Your account is still under review." });
