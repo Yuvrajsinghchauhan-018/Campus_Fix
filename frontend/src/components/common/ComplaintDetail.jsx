@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from "../../api/axios";
-import { Clock, MapPin, Tag, AlertOctagon, User, CheckCircle, Image as ImageIcon, MessageSquare, Star, ArrowLeft } from 'lucide-react';
+import api, { STATIC_BASE_URL } from "../../api/axios";
+import { Clock, MapPin, Tag, AlertOctagon, User, CheckCircle, Image as ImageIcon, MessageSquare, Star, ArrowLeft, X } from 'lucide-react';
 import { format } from 'date-fns';
+
+const getImageUrl = (url) => url?.startsWith('/uploads/') ? `${STATIC_BASE_URL}${url}` : url;
 
 const StatusTimeline = ({ history = [], currentStatus, createdAt }) => {
   // Mock timeline logic based on current status
@@ -106,9 +108,10 @@ const ComplaintDetail = () => {
               <div className="flex gap-4 overflow-x-auto pb-4">
                 {complaint.photos.map((url, i) => (
                   <img 
-                    key={i} src={url} alt={`Issue ${i}`} 
+                    key={i} src={getImageUrl(url)} alt={`Issue ${i}`} 
                     className="w-48 h-48 object-cover rounded-lg cursor-pointer hover:opacity-80 transition hover:shadow-md"
-                    onClick={() => setLightboxOpen(url)}
+                    onClick={() => setLightboxOpen(getImageUrl(url))}
+                    onError={(e) => { e.target.src = 'https://placehold.co/400x400/png?text=Image+Not+Found'; }}
                   />
                 ))}
               </div>
@@ -121,9 +124,10 @@ const ComplaintDetail = () => {
                <p className="text-slate-600 dark:text-slate-300 mb-4">{complaint.resolutionNote || 'The issue has been resolved by the assigned maintainer.'}</p>
                {complaint.completionPhoto && (
                  <img 
-                    src={complaint.completionPhoto} alt="Completion Proof" 
+                    src={getImageUrl(complaint.completionPhoto)} alt="Completion Proof" 
                     className="w-48 h-48 object-cover rounded-lg cursor-pointer hover:opacity-80 transition hover:shadow-md"
-                    onClick={() => setLightboxOpen(complaint.completionPhoto)}
+                    onClick={() => setLightboxOpen(getImageUrl(complaint.completionPhoto))}
+                    onError={(e) => { e.target.src = 'https://placehold.co/400x400/png?text=Image+Not+Found'; }}
                   />
                )}
             </div>
@@ -157,7 +161,14 @@ const ComplaintDetail = () => {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <Tag className="w-5 h-5 text-slate-400 mt-0.5" />
-                <div><p className="text-xs text-slate-500 uppercase tracking-wilder">Category</p><p className="font-medium">{complaint.category}</p></div>
+                <div>
+                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Categories</p>
+                   <div className="flex flex-wrap gap-1">
+                      {complaint.categories && complaint.categories.map(cat => (
+                         <span key={cat} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-medium text-xs border border-slate-200 dark:border-slate-700">{cat}</span>
+                      ))}
+                   </div>
+                </div>
               </li>
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
@@ -168,14 +179,14 @@ const ComplaintDetail = () => {
 
           <div className="card p-6">
             <h3 className="font-bold text-lg mb-4 border-b border-slate-100 dark:border-darkBorder pb-2">Assignment</h3>
-            {complaint.assignedTo ? (
+            {complaint.assignedMaintainer ? (
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-                  {complaint.assignedTo.name.charAt(0)}
+                  {complaint.assignedMaintainer.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-bold">{complaint.assignedTo.name}</p>
-                  <p className="text-sm text-slate-500">{complaint.assignedTo.jobType}</p>
+                  <p className="font-bold">{complaint.assignedMaintainer.name}</p>
+                  <p className="text-sm text-slate-500">{complaint.assignedMaintainer.jobType}</p>
                 </div>
               </div>
             ) : (

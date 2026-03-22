@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import api from '../../api/axios';
+import api, { STATIC_BASE_URL } from '../../api/axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, LayoutDashboard, LogOut } from 'lucide-react';
+import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, LayoutDashboard, LogOut, UserPlus, X, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../hooks/useSocket';
 
 const Sidebar = () => {
   const { logout } = useAuth();
@@ -23,6 +24,9 @@ const Sidebar = () => {
            </Link>
            <Link to="/authority/approvals" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/approvals' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <Users className="w-5 h-5" /> Maintainer Approvals
+           </Link>
+           <Link to="/authority/add-maintainer" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/add-maintainer' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <UserPlus className="w-5 h-5" /> Add Maintainer
            </Link>
            <Link to="/authority/reports" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/reports' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <FileText className="w-5 h-5" /> PDF Reports
@@ -45,6 +49,9 @@ const Sidebar = () => {
 const DashboardHome = () => {
   const [summary, setSummary] = useState(null);
   const [catData, setCatData] = useState([]);
+  const [refresh, setRefresh] = useState(0);
+
+  useSocket('complaint_update', () => setRefresh(prev => prev + 1));
   
   useEffect(() => {
     const fetchData = async () => {
@@ -58,7 +65,7 @@ const DashboardHome = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [refresh]);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -122,19 +129,30 @@ const DashboardHome = () => {
 
 // 2. Complaints Queue
 const ComplaintsQueue = () => {
-    const [complaints, setComplaints] = useState([]);
+    const [complaints, setComplaints] = useState({ queue: [], assigned: [], completed: [] });
+    const [tab, setTab] = useState('queue');
     const [maintainers, setMaintainers] = useState([]);
     const [selectedComp, setSelectedComp] = useState(null); // for assigning modal
-    const [assignData, setAssignData] = useState({ assignedTo: '', deadline: '', internalNote: '' });
+    const [viewingComp, setViewingComp] = useState(null); // for full view modal
+    const [assignData, setAssignData] = useState({ assignedMaintainer: '', deadline: '', internalNote: '' });
+    const [refresh, setRefresh] = useState(0);
+
+    useSocket('complaint_update', () => setRefresh(prev => prev + 1));
+    useSocket('maintainer_update', () => setRefresh(prev => prev + 1));
 
     const fetchAll = async () => {
         const cRes = await api.get('/complaints');
         const mRes = await api.get('/maintainers');
-        setComplaints(cRes.data.data.filter(c => c.status !== 'Resolved'));
+        const allComps = cRes.data.data || [];
+        setComplaints({
+            queue: allComps.filter(c => !c.assignedMaintainer && c.status !== 'Resolved'),
+            assigned: allComps.filter(c => c.assignedMaintainer && c.status !== 'Resolved'),
+            completed: allComps.filter(c => c.status === 'Resolved')
+        });
         setMaintainers(mRes.data.data);
     };
 
-    useEffect(() => { fetchAll(); }, []);
+    useEffect(() => { fetchAll(); }, [refresh]);
 
     const handleAssignForm = async (e) => {
         e.preventDefault();
@@ -150,7 +168,15 @@ const ComplaintsQueue = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative text-sm md:text-base">
-            <h1 className="text-2xl md:text-3xl font-bold mb-6">Active Complaints Queue</h1>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-slate-200 dark:border-darkBorder pb-4 gap-4">
+                <h1 className="text-2xl md:text-3xl font-bold">Complaints Management</h1>
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto overflow-x-auto custom-scrollbar">
+                    <button onClick={() => setTab('queue')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'queue' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600' : 'text-slate-500'}`}>Task Queue ({complaints.queue.length})</button>
+                    <button onClick={() => setTab('assigned')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'assigned' ? 'bg-white dark:bg-slate-700 shadow-sm text-orange-600' : 'text-slate-500'}`}>Assigned ({complaints.assigned.length})</button>
+                    <button onClick={() => setTab('completed')} className={`flex-1 md:flex-none py-2 px-5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === 'completed' ? 'bg-white dark:bg-slate-700 shadow-sm text-green-600' : 'text-slate-500'}`}>Completed ({complaints.completed.length})</button>
+                </div>
+            </div>
+            
             <div className="card overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                     <thead>
@@ -158,26 +184,44 @@ const ComplaintsQueue = () => {
                             <th className="p-4 font-medium text-slate-600 dark:text-slate-400">Title & Location</th>
                             <th className="p-4 font-medium text-slate-600 dark:text-slate-400">Category & Priority</th>
                             <th className="p-4 font-medium text-slate-600 dark:text-slate-400">Status</th>
-                            <th className="p-4 font-medium text-slate-600 dark:text-slate-400">Assign</th>
+                            {tab === 'queue' ? (
+                                <th className="p-4 font-medium text-slate-600 dark:text-slate-400">Assign</th>
+                            ) : tab === 'assigned' ? (
+                                <th className="p-4 font-medium text-slate-600 dark:text-slate-400">Maintainer</th>
+                            ) : (
+                                <th className="p-4 font-medium text-slate-600 dark:text-slate-400">Resolution Note</th>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-darkBorder">
-                        {complaints.map(c => (
+                        {(tab === 'queue' ? complaints.queue : tab === 'assigned' ? complaints.assigned : complaints.completed).map(c => (
                             <tr key={c._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                 <td className="p-4">
-                                    <p className="font-bold">{c.title}</p>
-                                    <p className="text-xs text-slate-500">{c.roomNumber}, Block {c.block}</p>
+                                    <button onClick={() => setViewingComp(c)} className="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline decoration-blue-300 dark:decoration-blue-700 underline-offset-4 text-left">
+                                        {c.title}
+                                    </button>
+                                    <p className="text-xs text-slate-500 mt-1">{c.roomNumber}, Block {c.block}</p>
                                 </td>
                                 <td className="p-4">
-                                    <p>{c.category}</p>
-                                    <p className={`text-xs font-bold ${c.priority==='Urgent'?'text-red-500':''}`}>{c.priority}</p>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {c.categories && c.categories.map(cat => <span key={cat} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">{cat}</span>)}
+                                    </div>
+                                    <p className={`text-xs font-bold mt-1 ${c.priority==='Urgent'?'text-red-500':''}`}>{c.priority}</p>
                                 </td>
-                                <td className="p-4 font-medium">{c.status}</td>
+                                <td className="p-4 font-medium">
+                                    {c.status}
+                                    {tab === 'completed' && c.assignedMaintainer && <p className="text-[11px] text-slate-500 font-normal mt-1 uppercase tracking-widest hidden sm:block">By: {c.assignedMaintainer.name}</p>}
+                                </td>
                                 <td className="p-4">
-                                    {c.status === 'Pending' ? (
+                                    {tab === 'queue' ? (
                                         <button onClick={() => setSelectedComp(c)} className="btn-primary py-1 px-3 text-sm">Assign</button>
+                                    ) : tab === 'assigned' ? (
+                                        <div>
+                                            <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{c.assignedMaintainer?.name || 'Unknown'}</p>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">{c.assignedMaintainer?.jobType}</p>
+                                        </div>
                                     ) : (
-                                        <span className="text-sm text-slate-500">Assigned</span>
+                                        <p className="text-sm text-slate-600 italic line-clamp-2">{c.resolutionNote || 'No notes provided.'}</p>
                                     )}
                                 </td>
                             </tr>
@@ -192,14 +236,13 @@ const ComplaintsQueue = () => {
                         <h2 className="text-xl font-bold mb-4">Assign Maintainer</h2>
                         <form onSubmit={handleAssignForm} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">Select Maintainer</label>
-                                <select required className="input-field" onChange={e => setAssignData({...assignData, assignedTo: e.target.value})}>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Select Maintainer</label>
+                                <select required className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white text-base rounded-xl focus:ring-2 focus:ring-blue-500 block p-3.5 shadow-sm transition-all" onChange={e => setAssignData({...assignData, assignedMaintainer: e.target.value})}>
                                     <option value="">-- Choose --</option>
                                     {maintainers
                                         .filter(m => {
-                                            if(selectedComp.category === 'Electrical') return m.jobType === 'Electrician';
-                                            if(selectedComp.category === 'Plumbing') return m.jobType === 'Plumber';
-                                            // Add more naive filtering
+                                            if(selectedComp.categories?.includes('Electrical') && m.jobType === 'Electrician') return true;
+                                            if(selectedComp.categories?.includes('Plumbing') && m.jobType === 'Plumber') return true;
                                             return true;
                                         })
                                         .map(m => (
@@ -208,18 +251,111 @@ const ComplaintsQueue = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">SLA Deadline</label>
-                                <input type="datetime-local" required className="input-field" onChange={e => setAssignData({...assignData, deadline: e.target.value})} />
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">SLA Deadline</label>
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                    {[
+                                        { label: 'End of Day', hours: 8 },
+                                        { label: '24 Hours', hours: 24 },
+                                        { label: '48 Hours', hours: 48 },
+                                        { label: '1 Week', hours: 168 }
+                                    ].map(opt => {
+                                        // Calculate a fixed target date for equality checking without shifting milliseconds on re-renders
+                                        const now = new Date();
+                                        now.setHours(now.getHours() + opt.hours);
+                                        // Floor it to minutes to match datetime-local format precisely
+                                        now.setSeconds(0, 0);
+                                        const targetDate = now.toISOString().slice(0, 16);
+                                        
+                                        return (
+                                            <div 
+                                                key={opt.label}
+                                                onClick={() => setAssignData({...assignData, deadline: targetDate})}
+                                                className={`cursor-pointer text-center py-2.5 px-3 text-[13px] font-bold rounded-xl border transition-all ${assignData.deadline === targetDate ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-400' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-blue-300 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600'}`}
+                                            >
+                                                {opt.label}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <input type="datetime-local" required className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white text-base rounded-xl focus:ring-2 focus:ring-blue-500 block p-3.5 shadow-sm transition-all" value={assignData.deadline || ''} onChange={e => setAssignData({...assignData, deadline: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">Internal Note (Optional)</label>
-                                <input type="text" className="input-field" onChange={e => setAssignData({...assignData, internalNote: e.target.value})} />
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Internal Note (Optional)</label>
+                                <input type="text" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white text-base rounded-xl focus:ring-2 focus:ring-blue-500 block p-3.5 shadow-sm transition-all" placeholder="e.g. Check wiring first" onChange={e => setAssignData({...assignData, internalNote: e.target.value})} />
                             </div>
-                            <div className="flex gap-2">
-                                <button type="submit" className="flex-1 btn-primary py-2">Confirm Assignment</button>
-                                <button type="button" onClick={()=>setSelectedComp(null)} className="flex-1 py-2 rounded-lg border border-slate-300 font-medium">Cancel</button>
+                            <div className="flex gap-2 pt-4">
+                                <button type="submit" className="flex-1 btn-primary py-3 px-6 shadow-md shadow-blue-500/20">Confirm Assignment</button>
+                                <button type="button" onClick={()=>setSelectedComp(null)} className="flex-1 py-3 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-slate-600 dark:text-slate-300 text-sm transition-all shadow-sm">Cancel</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {viewingComp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm shadow-2xl overflow-y-auto" onClick={() => setViewingComp(null)}>
+                    <div className="w-full max-w-2xl bg-white dark:bg-slate-900/95 p-6 md:p-8 relative flex flex-col my-auto shadow-2xl border border-slate-100 dark:border-white/10 rounded-[2rem] max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 className="text-2xl font-bold font-jakarta text-slate-800 dark:text-white mb-1">{viewingComp.title}</h2>
+                                <p className="text-sm font-medium text-slate-500 flex items-center gap-2">Room {viewingComp.roomNumber}, Block {viewingComp.block}, Floor {viewingComp.floor} • <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded font-bold uppercase tracking-widest text-[10px]">{viewingComp.locationType}</span></p>
+                            </div>
+                            <button onClick={()=>setViewingComp(null)} className="p-3 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 dark:bg-slate-800 dark:hover:bg-red-900/20 rounded-full transition-colors"><X className="w-5 h-5"/></button>
+                        </div>
+                        
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 mb-6 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-700/50 text-sm leading-relaxed whitespace-pre-line shadow-inner">
+                            {viewingComp.description}
+                        </div>
+
+                        {viewingComp.photos && viewingComp.photos.length > 0 && (
+                            <div className="mb-6">
+                                <h4 className="font-bold mb-3 flex items-center gap-2 text-slate-700 dark:text-slate-300"><ImageIcon className="w-4 h-4"/> Attached Evidence</h4>
+                                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+                                    {viewingComp.photos.map((url, i) => (
+                                        <a href={url?.startsWith('/uploads/') ? `${STATIC_BASE_URL}${url}` : url} target="_blank" rel="noreferrer" key={i} className="shrink-0 overflow-hidden rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+                                            <img src={url?.startsWith('/uploads/') ? `${STATIC_BASE_URL}${url}` : url} alt="Evidence" className="w-40 h-40 object-cover" onError={(e) => { e.target.src = 'https://placehold.co/400x400/png?text=Image+Not+Found'; }} />
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Current Status</span>
+                                <span className={`font-bold text-sm px-3 py-1 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-700 rounded-lg ${viewingComp.status==='Pending'?'text-orange-500':viewingComp.status==='Assigned'?'text-blue-500':viewingComp.status==='Resolved'?'text-green-500':'text-slate-700'}`}>{viewingComp.status}</span>
+                            </div>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Priority Engine</span>
+                                <span className={`font-bold text-sm px-3 py-1 bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-700 rounded-lg ${viewingComp.priority==='Urgent'?'text-red-500':viewingComp.priority==='High'?'text-orange-500':'text-slate-700 dark:text-slate-300'}`}>{viewingComp.priority}</span>
+                            </div>
+                            {viewingComp.aiReason && (
+                                <div className="col-span-2 p-5 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                                    <span className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5"/> Deepmind Architecture Rationale</span>
+                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed italic border-l-2 border-blue-300 dark:border-blue-700 pl-3">{viewingComp.aiReason}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {viewingComp.status === 'Pending' && (
+                            <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                                <button onClick={()=>{setSelectedComp(viewingComp); setViewingComp(null);}} className="btn-primary py-3.5 px-8 font-bold shadow-xl shadow-blue-500/20 w-full md:w-auto">Assign Resources Automatically</button>
+                            </div>
+                        )}
+                        {viewingComp.status !== 'Pending' && viewingComp.assignedMaintainer && (
+                            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+                                <div className="card p-4 border border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Allocated Technician</p>
+                                        <p className="font-bold text-slate-800 dark:text-white">{viewingComp.assignedMaintainer.name}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Domain</p>
+                                        <p className="font-bold text-blue-600 dark:text-blue-400">{viewingComp.assignedMaintainer.jobType}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -230,12 +366,15 @@ const ComplaintsQueue = () => {
 // 3. Maintainer Approvals
 const MaintainerApprovals = () => {
     const [pending, setPending] = useState([]);
+    const [refresh, setRefresh] = useState(0);
     
+    useSocket('maintainer_update', () => setRefresh(prev => prev + 1));
+
     const fetchPending = async () => {
         const res = await api.get('/maintainers/pending');
         setPending(res.data.data);
     };
-    useEffect(() => { fetchPending(); }, []);
+    useEffect(() => { fetchPending(); }, [refresh]);
 
     const handleApprove = async (id, status) => {
         await api.patch(`/maintainers/${id}/${status}`);
@@ -243,20 +382,129 @@ const MaintainerApprovals = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in">
-            <h1 className="text-2xl font-bold mb-6">Maintainer Approvals</h1>
+        <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative">
+            <div className="flex justify-between items-center bg-slate-100 dark:bg-slate-900 px-6 py-4 rounded-2xl mb-8 border border-slate-200 dark:border-slate-800">
+                <div>
+                    <h1 className="text-xl md:text-2xl font-bold">Maintainer Domain</h1>
+                    <p className="text-slate-500 text-sm mt-1">Review and approve pending applications seamlessly.</p>
+                </div>
+            </div>
+            
+            <h2 className="text-lg font-bold text-slate-600 dark:text-slate-400 mb-4 uppercase tracking-widest text-[11px]">Pending Approval Requests ({pending.length})</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pending.length === 0 ? <p className="text-slate-500">No pending approvals.</p> : pending.map(m => (
-                    <div key={m._id} className="card p-6 border-l-4 border-l-blue-500 shadow-sm rounded-xl">
-                        <h3 className="text-xl font-bold">{m.name}</h3>
-                        <p className="text-slate-500 mb-1">{m.email} • {m.phone}</p>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-bold uppercase inline-block mt-2">{m.jobType}</span>
-                        <div className="flex gap-2 mt-6 border-t border-slate-100 pt-4">
-                            <button onClick={()=>handleApprove(m._id, 'approve')} className="flex-1 bg-green-100 text-green-700 rounded-lg py-2 font-bold hover:bg-green-200 transition-colors">Approve</button>
-                            <button onClick={()=>handleApprove(m._id, 'reject')} className="flex-1 bg-red-50 text-red-600 rounded-lg py-2 font-bold hover:bg-red-100 transition-colors">Reject</button>
+                {pending.length === 0 ? <p className="text-slate-500 dark:text-slate-400">No pending approvals detected currently.</p> : pending.map(m => (
+                    <div key={m._id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border-l-4 border-l-blue-500 flex flex-col">
+                        <div className="flex justify-between items-start mb-4">
+                            <span className="px-2.5 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] rounded-lg font-bold uppercase tracking-widest leading-none">{m.jobType || "Unclassified"}</span>
+                            <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        </div>
+                        <h3 className="text-xl font-bold truncate text-slate-800 dark:text-white">{m.name}</h3>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1 mb-6 font-mono text-sm tracking-tight">{m.phone}</p>
+                        
+                        <div className="flex gap-3 mt-auto border-t border-slate-100 dark:border-slate-800 pt-5">
+                            <button onClick={()=>handleApprove(m._id, 'approve')} className="flex-1 bg-green-50 hover:bg-green-500 hover:text-white dark:bg-green-900/20 dark:hover:bg-green-500 text-green-700 dark:text-green-400 rounded-xl py-2.5 text-sm font-bold transition-colors border border-green-200 dark:border-green-800/30 hover:shadow-lg hover:shadow-green-500/20">
+                                Approve
+                            </button>
+                            <button onClick={()=>handleApprove(m._id, 'reject')} className="flex-[0.5] bg-slate-50 hover:bg-red-500 hover:text-white dark:bg-slate-800/50 dark:hover:bg-red-500 text-slate-600 dark:text-slate-400 rounded-xl py-2.5 text-sm font-bold transition-colors border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:shadow-red-500/20">
+                                Reject
+                            </button>
                         </div>
                     </div>
                 ))}
+            </div>
+
+        </div>
+    );
+};
+
+const AddMaintainerPanel = () => {
+    const [newMaint, setNewMaint] = useState({ name: '', phone: '', jobType: 'Electrician' });
+    const [submitting, setSubmitting] = useState(false);
+    const [success, setSuccess] = useState(false);
+
+    const handleCreate = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await api.post('/maintainers', newMaint);
+            setSuccess(true);
+            setNewMaint({ name: '', phone: '', jobType: 'Electrician' });
+        } catch(err) {
+            alert(err?.response?.data?.error || "Error creating maintainer");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in relative">
+            {success && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-fade-in p-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-[2rem] shadow-2xl max-w-sm w-full text-center transform transition-all translate-y-0 scale-100">
+                        <div className="w-24 h-24 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-green-100 dark:border-green-800">
+                            <CheckCircle className="w-12 h-12 text-green-500" />
+                        </div>
+                        <h3 className="text-2xl font-bold font-jakarta text-slate-800 dark:text-white mb-3">Success!</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-8 leading-relaxed">Maintainer has been successfully created and added to the database.</p>
+                        <button onClick={() => setSuccess(false)} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-slate-500/20">
+                            Continue
+                        </button>
+                    </div>
+                </div>
+            )}
+            
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none">
+                <div className="h-40 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative overflow-hidden flex items-center px-10">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2"></div>
+                    <div className="relative z-10 text-white">
+                        <div className="flex items-center gap-3 mb-2">
+                           <UserPlus className="w-8 h-8 text-white/90" />
+                           <h2 className="text-3xl font-jakarta font-extrabold tracking-tight text-white">Add Maintainer</h2>
+                        </div>
+                        <p className="text-white/80 font-medium">Bypass pending approvals and directly provision field agents securely.</p>
+                    </div>
+                </div>
+
+                <div className="p-8 md:p-12">
+                    <form onSubmit={handleCreate} className="space-y-8">
+                        <div className="grid md:grid-cols-2 gap-10">
+                            <div className="space-y-6 md:border-r border-slate-100 dark:border-slate-800 md:pr-10">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+                                    <input type="text" required className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-4 shadow-sm transition-all hover:bg-white dark:hover:bg-slate-800" value={newMaint.name} onChange={e=>setNewMaint({...newMaint, name: e.target.value})} placeholder="e.g. Ramesh Singh"/>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Secure Phone</label>
+                                    <input type="tel" required maxLength={10} className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-4 shadow-sm transition-all hover:bg-white dark:hover:bg-slate-800" value={newMaint.phone} onChange={e=>setNewMaint({...newMaint, phone: e.target.value})} placeholder="10-digit number used for authentication" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Operative Domain</label>
+                                    <div className="grid grid-cols-2 gap-3 relative">
+                                        {['Electrician','Plumber','IT Technician','AC Mechanic','Carpenter','Civil Worker'].map(j => (
+                                            <div 
+                                                key={j} 
+                                                onClick={() => setNewMaint({...newMaint, jobType: j})}
+                                                className={`cursor-pointer border text-sm font-bold text-center p-3.5 rounded-xl transition-all ${newMaint.jobType === j ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-400' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                            >
+                                                {j}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-8 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                            <button type="submit" disabled={submitting} className="btn-primary py-4 px-10 text-lg font-bold shadow-xl shadow-blue-500/20 disabled:opacity-70 transition-transform hover:-translate-y-1 flex items-center gap-3">
+                                <UserPlus className="w-5 h-5"/> {submitting ? 'Authenticating...' : 'Create Maintainer'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
@@ -339,6 +587,7 @@ const AuthorityMain = () => {
           <Route path="" element={<DashboardHome />} />
           <Route path="queue" element={<ComplaintsQueue />} />
           <Route path="approvals" element={<MaintainerApprovals />} />
+          <Route path="add-maintainer" element={<AddMaintainerPanel />} />
           <Route path="reports" element={<div className="max-w-4xl mx-auto p-8 animate-fade-in"><div className="card p-10 text-center flex flex-col items-center shadow-sm rounded-xl border border-slate-100 dark:border-slate-800"><FileText className="w-16 h-16 text-blue-500 mb-4 opacity-80"/><h1 className="text-3xl font-bold mb-4 font-jakarta">Monthly PDF Reports</h1><p className="text-slate-500 max-w-md mx-auto mb-8">Download a comprehensive PDF summarizing the resolution rates, maintenance costs, and SLA adherence across all campus sectors.</p><a href="/api/analytics/report" target="_blank" rel="noreferrer" className="btn-primary py-3 px-8 text-lg font-bold shadow-md inline-flex items-center gap-3"><Download className="w-5 h-5"/> Generate Full System Report</a></div></div>} />
           <Route path="qr" element={<QRGenerator />} />
         </Routes>

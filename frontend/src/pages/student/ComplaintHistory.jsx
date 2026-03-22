@@ -86,9 +86,13 @@ const ComplaintHistory = () => {
                               <span className="line-clamp-1">{c.title}</span>
                            </td>
                            <td className="p-5">
-                              <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-xs text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
-                                 {c.category}
-                              </span>
+                              <div className="flex flex-wrap gap-1">
+                                 {c.categories && c.categories.map(cat => (
+                                    <span key={cat} className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-xs text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                       {cat}
+                                    </span>
+                                 ))}
+                              </div>
                            </td>
                            <td className="p-5 text-sm text-slate-600 dark:text-slate-400">
                               {c.block} - {c.roomNumber}

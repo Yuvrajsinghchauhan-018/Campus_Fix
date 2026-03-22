@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
-import api from '../../api/axios';
+import api, { STATIC_BASE_URL } from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Wrench, CheckCircle, Clock, AlertTriangle, PlayCircle, Image as ImageIcon, CheckSquare, UploadCloud, X, ArrowLeft, Star } from 'lucide-react';
 import { format } from 'date-fns';
+import { useSocket } from '../../hooks/useSocket';
 
 const MaintainerHome = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refresh, setRefresh] = useState(0);
+
+  useSocket('complaint_update', () => setRefresh(prev => prev + 1));
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -21,7 +25,7 @@ const MaintainerHome = () => {
       finally { setLoading(false); }
     };
     fetchTasks();
-  }, []);
+  }, [refresh]);
 
   const pending = tasks.filter(t => t.status === 'Assigned' || t.status === 'In Progress');
   const resolved = tasks.filter(t => t.status === 'Resolved');
@@ -34,7 +38,14 @@ const MaintainerHome = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Maintainer Dashboard</h1>
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+            Welcome, {user?.name ? user.name.split(' ')[0] : 'Maintainer'}!
+          </h1>
+          <p className="text-slate-500 font-medium text-sm mt-1 tracking-wide">Maintainer Dashboard</p>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="card p-6 flex items-center justify-between border-l-4 border-blue-500">
@@ -76,6 +87,24 @@ const MaintainerHome = () => {
           ))
         )}
       </div>
+
+      <h2 className="text-xl font-bold mb-4 mt-12 text-slate-700 dark:text-slate-300">Completed Tasks History</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {resolved.length === 0 ? (
+          <div className="col-span-full p-8 text-center card bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 border-dashed border-2 border-slate-200 dark:border-slate-800">No completed tasks yet. Keep up the good work!</div>
+        ) : (
+          resolved.map(t => (
+            <Link to={`/maintainer/task/${t._id}`} key={t._id} className="card p-6 border border-slate-200 dark:border-slate-800 hover:border-green-400 group bg-slate-50 dark:bg-slate-900 transition-colors">
+              <div className="flex justify-between items-start mb-4">
+                <span className={`px-2 py-1 text-xs font-bold rounded ${t.priority==='Urgent'?'bg-red-100 text-red-700':'bg-slate-200 text-slate-700'}`}>{t.priority}</span>
+                <span className="px-2 py-1 text-xs font-bold rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Resolved</span>
+              </div>
+              <h3 className="font-bold text-lg mb-2 text-slate-700 dark:text-slate-300 group-hover:text-green-600 transition-colors">{t.title}</h3>
+              <p className="text-sm text-slate-500 mb-2">{t.roomNumber}, Block {t.block}, Floor {t.floor}</p>
+            </Link>
+          ))
+        )}
+      </div>
     </div>
   );
 };
@@ -88,7 +117,10 @@ const TaskDetail = () => {
     const [photo, setPhoto] = useState(null);
     const [preview, setPreview] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [refresh, setRefresh] = useState(0);
     const navigate = useNavigate();
+
+    useSocket('complaint_update', () => setRefresh(prev => prev + 1));
 
     const fetchTask = async () => {
         try {
@@ -100,7 +132,7 @@ const TaskDetail = () => {
         finally { setLoading(false); }
     };
 
-    useEffect(() => { fetchTask(); }, [id]);
+    useEffect(() => { fetchTask(); }, [id, refresh]);
 
     const handleStatusUpdate = async (newStatus) => {
         setSubmitting(true);
@@ -160,7 +192,7 @@ const TaskDetail = () => {
                         <h4 className="font-bold mb-3 flex items-center gap-2"><ImageIcon className="w-4 h-4"/> Student Photos</h4>
                         <div className="flex gap-4 overflow-x-auto pb-4">
                             {task.photos.map((url, i) => (
-                                <img key={i} src={url} alt="Issue" className="w-40 h-40 object-cover rounded shadow-sm border border-slate-200" />
+                                <img key={i} src={url?.startsWith('/uploads/') ? `${STATIC_BASE_URL}${url}` : url} alt="Issue" className="w-40 h-40 object-cover rounded shadow-sm border border-slate-200" onError={(e) => { e.target.src = 'https://placehold.co/400x400/png?text=Image+Not+Found'; }} />
                             ))}
                         </div>
                     </div>
@@ -179,8 +211,8 @@ const TaskDetail = () => {
                            </h3>
                            <form onSubmit={handleResolve} className="space-y-4">
                                <div>
-                                   <label className="block text-sm font-medium mb-1">Resolution Note (What did you fix?)</label>
-                                   <textarea required value={note} onChange={e=>setNote(e.target.value)} rows="3" className="input-field" placeholder="Replaced faulty wiring..."></textarea>
+                                   <label className="block text-sm font-medium mb-1">Resolution Note (Optional)</label>
+                                   <textarea value={note} onChange={e=>setNote(e.target.value)} rows="3" className="input-field" placeholder="Replaced faulty wiring..."></textarea>
                                </div>
                                <div>
                                    <label className="block text-sm font-medium mb-1">Completion Photo (Proof)</label>
@@ -199,7 +231,7 @@ const TaskDetail = () => {
                                        ) : (
                                            <div className="relative w-32 h-32 rounded border overflow-hidden">
                                                <img src={preview} alt="Preview" className="w-full h-full object-cover"/>
-                                               <button type="button" onClick={()=>{setPhoto(null); setPreview(null)}} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3"/></button>
+                                               <button type="button" onClick={()=>{setPhoto(null); setPreview(null)}} className="absolute top-1 right-1 bg-black/50 hover:bg-red-500 text-white rounded-full p-1"><X className="w-3 h-3"/></button>
                                            </div>
                                        )}
                                    </div>

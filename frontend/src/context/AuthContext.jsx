@@ -33,6 +33,11 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (credentials) => {
+    // 1) Force prune any stale contextual tokens across both storage spaces to guarantee zero leakage
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+
     const res = await api.post('/auth/login', credentials);
     if (res.data.success && res.data.token) {
       localStorage.setItem('token', res.data.token);
@@ -45,6 +50,12 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     const res = await api.post('/auth/register', userData);
+    if (res.data.success && res.data.token && userData.role === 'authority') {
+      localStorage.setItem('token', res.data.token);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+    }
     return res.data;
   };
 
@@ -66,6 +77,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    localStorage.clear();
+    sessionStorage.clear();
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);

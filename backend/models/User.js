@@ -38,6 +38,18 @@ const UserSchema = new mongoose.Schema({
     enum: ['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
   },
   department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  floors: [{ 
+    type: String, 
+    enum: ['Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6'] 
+  }],
+  block: { 
+    type: String, 
+    enum: ['MSI', 'MSIT', 'MBA']
+  },
+  responsibilities: [{
+    type: String,
+    enum: ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure']
+  }],
   profilePhoto: { type: String },
   availability: {
     type: String,
@@ -49,8 +61,8 @@ const UserSchema = new mongoose.Schema({
   isApproved: { type: Boolean, default: false },
   approvalStatus: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    enum: ['pending', 'approved', 'rejected', 'Pending', 'Approved', 'Rejected'],
+    default: 'Pending'
   },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, {

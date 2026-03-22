@@ -1,67 +1,82 @@
 const User = require('../models/User');
 
-// @desc    Get all pending maintainers
-// @route   GET /api/maintainers/pending
-// @access  Private/Authority
+exports.createMaintainer = async (req, res) => {
+  try {
+    const { name, phone, jobType } = req.body;
+    if (!name || !phone || !jobType) {
+      return res.status(400).json({ success: false, error: 'Name, phone, and type are required' });
+    }
+
+    const exist = await User.findOne({ phone, role: 'maintainer' });
+    if (exist) return res.status(400).json({ success: false, error: 'Maintainer with this phone already exists' });
+
+    const maintainer = await User.create({
+      name,
+      phone,
+      jobType,
+      role: 'maintainer',
+      isApproved: true,
+      approvalStatus: 'Approved',
+      createdBy: req.user.id
+    });
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('maintainer_update');
+
+    res.status(201).json({ success: true, data: maintainer });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 exports.getPendingMaintainers = async (req, res) => {
   try {
-    const maintainers = await User.find({ role: 'maintainer', approvalStatus: 'pending' }).select('-password');
+    const maintainers = await User.find({ role: 'maintainer', approvalStatus: { $in: ['pending', 'Pending'] } }).select('-password');
     res.status(200).json({ success: true, data: maintainers });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// @desc    Approve maintainer
-// @route   PATCH /api/maintainers/:id/approve
-// @access  Private/Authority
 exports.approveMaintainer = async (req, res) => {
   try {
     const maintainer = await User.findById(req.params.id);
-    if (!maintainer || maintainer.role !== 'maintainer') {
-      return res.status(404).json({ success: false, error: 'Maintainer not found' });
-    }
+    if (!maintainer || maintainer.role !== 'maintainer') return res.status(404).json({ success: false, error: 'Maintainer not found' });
 
     maintainer.isApproved = true;
-    maintainer.approvalStatus = 'approved';
+    maintainer.approvalStatus = 'Approved';
     await maintainer.save();
-
-    // TODO: Send email notification
     
+    const io = req.app.get('socketio');
+    if (io) io.emit('maintainer_update');
+
     res.status(200).json({ success: true, data: maintainer });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// @desc    Reject maintainer
-// @route   PATCH /api/maintainers/:id/reject
-// @access  Private/Authority
 exports.rejectMaintainer = async (req, res) => {
   try {
     const maintainer = await User.findById(req.params.id);
-    if (!maintainer || maintainer.role !== 'maintainer') {
-      return res.status(404).json({ success: false, error: 'Maintainer not found' });
-    }
+    if (!maintainer || maintainer.role !== 'maintainer') return res.status(404).json({ success: false, error: 'Maintainer not found' });
 
     maintainer.isApproved = false;
-    maintainer.approvalStatus = 'rejected';
+    maintainer.approvalStatus = 'Rejected';
     await maintainer.save();
-
-    // TODO: Send email notification
     
+    const io = req.app.get('socketio');
+    if (io) io.emit('maintainer_update');
+
     res.status(200).json({ success: true, data: maintainer });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// @desc    Get all approved maintainers
-// @route   GET /api/maintainers
-// @access  Private/Authority
 exports.getApprovedMaintainers = async (req, res) => {
   try {
-    const maintainers = await User.find({ role: 'maintainer', approvalStatus: 'approved' }).select('-password');
+    const maintainers = await User.find({ role: 'maintainer', approvalStatus: { $in: ['approved', 'Approved'] } }).select('-password');
     res.status(200).json({ success: true, data: maintainers });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

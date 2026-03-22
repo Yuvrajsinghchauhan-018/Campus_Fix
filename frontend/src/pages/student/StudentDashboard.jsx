@@ -5,6 +5,7 @@ import { PlusCircle, Clock, CheckCircle, PackageOpen, AlertTriangle, LayoutDashb
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../hooks/useSocket';
 
 // Mock components to be replaced
 import NewComplaint from './NewComplaint';
@@ -46,6 +47,9 @@ const DashboardHome = () => {
   const [stats, setStats] = useState({ pending: 0, inProgress: 0, resolved: 0 });
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refresh, setRefresh] = useState(0);
+
+  useSocket('complaint_update', () => setRefresh(prev => prev + 1));
 
   useEffect(() => {
     const fetchComplaints = async () => {
@@ -69,7 +73,7 @@ const DashboardHome = () => {
       }
     };
     fetchComplaints();
-  }, []);
+  }, [refresh]);
 
   if(loading) return <div className="p-8 text-center"><div className="animate-pulse flex flex-col items-center"><div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-full mb-4"></div><div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div></div></div>;
 
@@ -130,7 +134,13 @@ const DashboardHome = () => {
                      {recent.map((c) => (
                         <tr key={c._id} className="border-b border-slate-100 dark:border-darkBorder hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                            <td className="p-4 font-medium text-slate-800 dark:text-slate-200">{c.title}</td>
-                           <td className="p-4"><span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs text-slate-600 dark:text-slate-300 font-medium">{c.category}</span></td>
+                           <td className="p-4">
+                              <div className="flex flex-wrap gap-1">
+                                 {c.categories && c.categories.map(cat => (
+                                    <span key={cat} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">{cat}</span>
+                                 ))}
+                              </div>
+                           </td>
                            <td className="p-4">
                               <span className={`px-2 py-1 rounded text-xs font-bold ${
                                  c.status==='Resolved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
