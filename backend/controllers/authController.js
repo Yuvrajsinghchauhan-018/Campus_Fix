@@ -15,7 +15,7 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role, collegeId, phone, gender, jobType, adminSecretKey, floor, responsibilities, block } = req.body;
+    const { name, email, password, role, collegeId, phone, gender, jobType, adminSecretKey, floors, responsibilities, block } = req.body;
 
     if (role === 'authority') {
       if (!name || !email || !phone || !adminSecretKey) {
