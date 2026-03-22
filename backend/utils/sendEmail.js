@@ -1,28 +1,15 @@
-const nodemailer = require('nodemailer');
-
+/**
+ * Simulates sending an email via Console Log (Twilio removed per user request)
+ * @param {object} options - Email options { email, subject, message, html }
+ */
 const sendEmail = async (options) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
-    const message = {
-      from: `${process.env.EMAIL_USER}`,
-      to: options.email,
-      subject: options.subject,
-      text: options.message,
-      html: options.html
-    };
-
-    const info = await transporter.sendMail(message);
-    console.log('Message sent: %s', info.messageId);
-  } catch (error) {
-    console.error('Email sending failed:', error.message);
-  }
+  console.log('\n==================================================');
+  console.log(`📧 SIMULATED EMAIL DISPATCH`);
+  console.log(`📬 To: ${options.email}`);
+  console.log(`📌 Subject: ${options.subject}`);
+  console.log(`📄 Message: ${options.message || 'No text content'}`);
+  console.log('==================================================\n');
+  return { success: true, messageId: 'simulated_email_id' };
 };
 
 module.exports = sendEmail;
