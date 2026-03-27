@@ -10,18 +10,41 @@ import api from '../../api/axios';
 import { Colors } from '../../theme/colors';
 
 const BLOCKS = ['MSI', 'MSIT', 'MBA'];
-const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Common Area'];
+const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Staff Room', 'Common Area'];
+
+const DYNAMIC_ISSUES = {
+  Classroom: ['Projector', 'Fan', 'AC', 'Lights', 'Benches/Desks', 'Board'],
+  Lab: ['Computers', 'Keyboards', 'Mouse', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
+  Corridor: ['Lights', 'CCTV', 'Cleanliness', 'Electrical'],
+  Washroom: ['Water Supply', 'Flush', 'Cleanliness', 'Broken Fixtures'],
+  'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet'],
+  'Common Area': ['Lights', 'Cleanliness', 'Furniture']
+};
 
 export default function NewComplaintScreen({ navigation }) {
   const [form, setForm] = useState({
     title: '', description: '',
-    locationType: 'Classroom', roomNumber: '', block: 'MSI', floor: ''
+    locationType: 'Classroom', roomNumber: '', block: 'MSI', floor: '', issues: []
   });
   const [photos, setPhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
+  const update = (key, val) => {
+    if (key === 'locationType') {
+      setForm(f => ({ ...f, locationType: val, issues: [] }));
+    } else {
+      setForm(f => ({ ...f, [key]: val }));
+    }
+  };
+
+  const toggleIssue = (issue) => {
+    setForm(f => {
+      const arr = f.issues || [];
+      const newIssues = arr.includes(issue) ? arr.filter(i => i !== issue) : [...arr, issue];
+      return { ...f, issues: newIssues };
+    });
+  };
 
   const pickImage = async (useCamera) => {
     const perm = useCamera
@@ -48,7 +71,13 @@ export default function NewComplaintScreen({ navigation }) {
     setError('');
     try {
       const data = new FormData();
-      Object.keys(form).forEach(k => data.append(k, form[k]));
+      Object.keys(form).forEach(k => {
+        if (k === 'issues') {
+           form.issues.forEach(iss => data.append('issues', iss));
+        } else {
+           data.append(k, form[k]);
+        }
+      });
       photos.forEach((photo, i) => {
         data.append('photos', {
           uri: photo.uri,
@@ -131,6 +160,23 @@ export default function NewComplaintScreen({ navigation }) {
             ))}
           </View>
 
+          {/* Dynamic Issues Based on Location */}
+          {form.locationType && DYNAMIC_ISSUES[form.locationType] && (
+            <>
+              <Label text={`What's wrong in the ${form.locationType}? (Select all that apply)`} />
+              <View style={styles.chipRow}>
+                {DYNAMIC_ISSUES[form.locationType].map(issue => {
+                  const isSelected = form.issues.includes(issue);
+                  return (
+                    <TouchableOpacity key={issue} style={[styles.chip, styles.issueChip, isSelected && styles.issueChipActive]} onPress={() => toggleIssue(issue)}>
+                      <Text style={[styles.chipText, isSelected && styles.issueChipTextActive]}>+ {issue}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          )}
+
           {/* Room Number */}
           <Label text={form.locationType === 'Lab' ? 'Lab Number' : 'Room Number'} />
           <TextInput style={styles.input} placeholder={form.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'}
@@ -196,6 +242,9 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   chipText: { fontSize: 13, fontWeight: '700', color: Colors.textMuted },
   chipTextActive: { color: '#fff' },
+  issueChip: { backgroundColor: '#f8fafc', borderColor: '#cbd5e1', borderRadius: 20 },
+  issueChipActive: { backgroundColor: '#e0e7ff', borderColor: '#6366f1' },
+  issueChipTextActive: { color: '#4f46e5' },
   photoRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
   photoBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 20, borderRadius: 14, borderWidth: 2, borderStyle: 'dashed', borderColor: Colors.border, backgroundColor: '#fff' },
   photoBtnText: { fontSize: 13, fontWeight: '700', color: Colors.textMuted },

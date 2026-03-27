@@ -4,8 +4,13 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-exports.analyzeComplaint = async (title, description) => {
+exports.analyzeComplaint = async (title, description, issues = []) => {
   try {
+    let issuesContext = '';
+    if (issues && issues.length > 0) {
+      issuesContext = `\n### USER SELECTED ISSUES (IMPORTANT):\nThe student explicitly identified these specific issues: [${issues.join(', ')}]\nFactor these into your categorization and priority reasoning.\n`;
+    }
+
     const prompt = `You are an intelligent campus facility management assistant.
 
 Your task is to analyze a complaint and return ONLY a valid JSON response. Do not include any explanation or extra text outside JSON.
@@ -155,9 +160,9 @@ Output:
 * Categories must exactly match allowed list
 * NEVER return "Other"
 * Prefer 2 or more categories when possible
-
-Complaint Title: ${title}
-Complaint Description: ${description}`;
+${issuesContext}
+Complaint Title: \${title}
+Complaint Description: \${description}`;
 
     const response = await groq.chat.completions.create({
       model: 'llama-3.1-8b-instant',

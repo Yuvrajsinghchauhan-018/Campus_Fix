@@ -8,13 +8,16 @@ const { analyzeComplaint } = require('../utils/aiPriority');
 exports.createComplaint = async (req, res) => {
   try {
     const { title, description, locationType, roomNumber, block, floor } = req.body;
+    let issues = req.body.issues || [];
+    if (!Array.isArray(issues)) issues = [issues]; // Handle single string or undefined
+    issues = issues.filter(Boolean); // Clean any empties
     let photos = [];
     
     if (req.files && req.files.length > 0) {
       photos = req.files.map(file => `/uploads/${file.filename}`);
     }
 
-    const aiResult = await analyzeComplaint(title, description);
+    const aiResult = await analyzeComplaint(title, description, issues);
 
     // AI Safety Check
     if (aiResult && aiResult.isInappropriate) {
@@ -117,6 +120,7 @@ exports.createComplaint = async (req, res) => {
       aiReason: aiResult ? aiResult.reason : null,
       aiEstimatedFixTime: aiResult ? aiResult.estimatedFixTimeHours : null,
       locationType: locationType || 'Classroom',
+      issues,
       roomNumber,
       block,
       floor,

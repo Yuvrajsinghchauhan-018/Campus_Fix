@@ -7,6 +7,7 @@ const ComplaintSchema = new mongoose.Schema({
     type: String, 
     enum: ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure']
   }],
+  issues: [{ type: String }],
   priority: { 
     type: String, 
     enum: ['Low', 'Medium', 'High', 'Urgent'],
@@ -23,7 +24,7 @@ const ComplaintSchema = new mongoose.Schema({
   },
   locationType: { 
     type: String, 
-    enum: ['Lab', 'Classroom'],
+    enum: ['Lab', 'Classroom', 'Corridor', 'Staff Room', 'Washroom', 'Common Area'],
     default: 'Classroom'
   },
   roomNumber: { type: String, required: true },

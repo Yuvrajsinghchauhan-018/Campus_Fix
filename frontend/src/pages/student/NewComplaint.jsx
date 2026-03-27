@@ -4,11 +4,22 @@ import api from '../../api/axios';
 import { Sparkles, UploadCloud, X, Loader2, CheckCircle, AlertTriangle, FileText, MapPin, Layers, DoorOpen, Type, Map } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Staff Room', 'Common Area'];
+
+const DYNAMIC_ISSUES = {
+  Classroom: ['Projector', 'Fan', 'AC', 'Lights', 'Benches/Desks', 'Board'],
+  Lab: ['Computers', 'Keyboards', 'Mouse', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
+  Corridor: ['Lights', 'CCTV', 'Cleanliness', 'Electrical'],
+  Washroom: ['Water Supply', 'Flush', 'Cleanliness', 'Broken Fixtures'],
+  'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet'],
+  'Common Area': ['Lights', 'Cleanliness', 'Furniture']
+};
+
 const NewComplaint = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '', description: '', locationType: 'Classroom', 
-    roomNumber: '', block: 'MSI', floor: ''
+    roomNumber: '', block: 'MSI', floor: '', issues: []
   });
   
   const [photos, setPhotos] = useState([]);
@@ -17,7 +28,22 @@ const NewComplaint = () => {
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'locationType') {
+      setFormData({ ...formData, locationType: value, issues: [] });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const toggleIssue = (issue) => {
+    setFormData(f => {
+      const arr = f.issues || [];
+      return {
+        ...f,
+        issues: arr.includes(issue) ? arr.filter(i => i !== issue) : [...arr, issue]
+      };
+    });
   };
 
   const handlePhotoChange = (e) => {
@@ -48,7 +74,13 @@ const NewComplaint = () => {
 
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      Object.keys(formData).forEach(key => {
+        if (key === 'issues') {
+           formData.issues.forEach(iss => data.append('issues', iss));
+        } else {
+           data.append(key, formData[key]);
+        }
+      });
       photos.forEach(file => data.append('photos', file));
 
       const res = await api.post('/complaints', data, {
@@ -144,14 +176,40 @@ const NewComplaint = () => {
                         <Map className="h-5 w-5 text-slate-400" />
                      </div>
                      <select name="locationType" value={formData.locationType} onChange={handleChange} className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800 appearance-none cursor-pointer">
-                       <option value="Classroom">Classroom</option>
-                       <option value="Lab">Lab</option>
+                       {LOCATION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                      </select>
                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                      </div>
                   </div>
                 </div>
+
+                {formData.locationType && DYNAMIC_ISSUES[formData.locationType] && (
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
+                    What's wrong in the {formData.locationType}? (Select all that apply)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {DYNAMIC_ISSUES[formData.locationType].map(issue => {
+                      const isSelected = formData.issues.includes(issue);
+                      return (
+                         <button
+                           key={issue}
+                           type="button"
+                           onClick={() => toggleIssue(issue)}
+                           className={`px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
+                             isSelected
+                               ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-300'
+                               : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'
+                           }`}
+                         >
+                           + {issue}
+                         </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
