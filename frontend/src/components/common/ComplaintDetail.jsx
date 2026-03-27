@@ -173,10 +173,13 @@ const ComplaintDetail = () => {
               <li className="flex items-start gap-3">
                 <Tag className="w-5 h-5 text-slate-400 mt-0.5" />
                 <div>
-                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Categories</p>
-                   <div className="flex flex-wrap gap-1">
+                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Categories & Issues</p>
+                   <div className="flex flex-wrap gap-1 mt-1">
                       {complaint.categories && complaint.categories.map(cat => (
                          <span key={cat} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-medium text-xs border border-slate-200 dark:border-slate-700">{cat}</span>
+                      ))}
+                      {complaint.issues && complaint.issues.map(iss => (
+                         <span key={iss} className="px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded font-medium text-xs border border-indigo-200 dark:border-indigo-800">{iss}</span>
                       ))}
                    </div>
                 </div>
