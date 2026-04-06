@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
+import logo from '../../assets/images/msi logo.png';
 
 // Mock components to be replaced
 import NewComplaint from './NewComplaint';
@@ -18,7 +19,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-darkBorder hidden md:flex flex-col shrink-0 min-h-[calc(100vh-4rem)] sticky top-16">
+    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-darkBorder hidden md:flex flex-col shrink-0 h-[calc(100vh-4rem)] fixed left-0 top-16 z-30 overflow-y-auto custom-scrollbar">
       <div className="p-6">
         <h2 className="text-xl font-bold font-jakarta mb-8 text-slate-800 dark:text-white">Student Panel</h2>
         <nav className="flex flex-col gap-2">
@@ -34,6 +35,10 @@ const Sidebar = () => {
         </nav>
       </div>
       <div className="mt-auto p-6 border-t border-slate-200 dark:border-darkBorder">
+         <div className="flex flex-col items-center gap-4 mb-6 group">
+            <img src={logo} alt="MSI Logo" className="w-32 h-auto transition-all duration-300 group-hover:scale-110" />
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 dark:text-slate-500 text-center">Managed by MSI</p>
+         </div>
          <button onClick={logout} className="p-3 w-full rounded-lg flex items-center gap-3 font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <LogOut className="w-5 h-5" /> Logout
          </button>
@@ -172,7 +177,7 @@ const StudentMain = () => {
   return (
     <div className="min-h-screen pt-16 bg-slate-50 dark:bg-slate-950 flex relative">
       <Sidebar />
-      <div className="flex-1 w-full max-w-full overflow-x-hidden">
+      <div className="flex-1 w-full max-w-full overflow-x-hidden md:ml-64">
         <Routes>
           <Route path="" element={<DashboardHome />} />
           <Route path="new" element={<NewComplaint />} />

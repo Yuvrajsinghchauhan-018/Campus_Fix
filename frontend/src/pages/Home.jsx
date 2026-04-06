@@ -3,6 +3,7 @@ import { motion, useInView, useAnimation } from 'framer-motion';
 import { Shield, User, Wrench, ArrowRight, Zap, Camera, Clock, CheckCircle, Bell, QrCode, TrendingUp, Search, Star } from 'lucide-react';
 import AuthModal from '../components/common/AuthModal';
 import api from '../api/axios';
+import logo from '../assets/images/msi logo.png';
 
 const Counter = ({ to, suffix = "", duration = 2 }) => {
   const [count, setCount] = useState(0);
@@ -11,18 +12,28 @@ const Counter = ({ to, suffix = "", duration = 2 }) => {
 
   useEffect(() => {
     if (isInView) {
-      let start = 0;
       const end = parseFloat(to);
-      if (start === end) return;
+      const startTime = Date.now();
+      const durMs = duration * 1000;
       
-      let totalMilSecDur = parseInt(duration);
-      let incrementTime = (totalMilSecDur / end) * 1000;
+      const timer = setInterval(() => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / durMs, 1);
+        
+        // Handle both integer and simple float counts
+        const currentCount = to.includes('.') 
+          ? (progress * end).toFixed(1)
+          : Math.floor(progress * end);
+          
+        setCount(currentCount + suffix);
+        
+        if (progress === 1) {
+          clearInterval(timer);
+        }
+      }, 30); // ~33fps is enough for this
       
-      let timer = setInterval(() => {
-        start += 1;
-        setCount(String(start) + suffix);
-        if (start === end) clearInterval(timer);
-      }, incrementTime);
+      return () => clearInterval(timer);
     }
   }, [to, isInView, suffix, duration]);
 
@@ -72,10 +83,10 @@ const Home = () => {
       {/* 6a. Live scrolling ticker (Top bar) */}
       <div className="w-full bg-blue-600 text-white py-2 overflow-hidden whitespace-nowrap pt-18">
         <motion.div 
-           initial={{ x: '100%' }}
-           animate={{ x: '-100%' }}
-           transition={{ ease: 'linear', duration: 20, repeat: Infinity }}
-           className="inline-block"
+          initial={{ x: '100%' }}
+          animate={{ x: '-100%' }}
+          transition={{ ease: 'linear', duration: 20, repeat: Infinity }}
+          className="inline-block"
         >
           {announcements.length > 0 
             ? announcements.map(a => `🔔 ${a.title}: ${a.message} `).join(" |   | ") 
@@ -232,19 +243,19 @@ const Home = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20 text-center">
             <div className="p-6">
-              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="1420" suffix="+" duration="2" /></div>
+              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="1420" suffix="+" duration="3" /></div>
               <p className="text-slate-600 dark:text-slate-400 font-medium">Issues Resolved</p>
             </div>
             <div className="p-6">
-              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="2.4" suffix="h" duration="2" /></div>
+              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="48" suffix="h" duration="3" /></div>
               <p className="text-slate-600 dark:text-slate-400 font-medium">Avg Fix Time</p>
             </div>
             <div className="p-6">
-              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="45" duration="1" /></div>
+              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="45" duration="3" /></div>
               <p className="text-slate-600 dark:text-slate-400 font-medium">Active Maintainers</p>
             </div>
             <div className="p-6">
-              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="98" suffix="%" duration="2" /></div>
+              <div className="text-4xl md:text-5xl font-jakarta font-bold text-blue-600 mb-2"><Counter to="98" suffix="%" duration="3" /></div>
               <p className="text-slate-600 dark:text-slate-400 font-medium">Satisfaction</p>
             </div>
           </div>
@@ -293,7 +304,7 @@ const Home = () => {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xl">C</div>
+              <img src={logo} alt="MSI Logo" className="w-10 h-10 object-contain" />
               <span className="font-jakarta font-bold text-xl text-white">CampusFix</span>
             </div>
             <p className="text-sm">Smart Campus, Seamless Maintenance.</p>

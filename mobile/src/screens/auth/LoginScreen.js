@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Dimensions
+  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Dimensions, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +16,7 @@ const ROLES = [
   { key: 'maintainer', label: 'Maintainer', icon: 'construct', color: '#0891b2', bg: '#ecfeff' },
 ];
 
-const JOB_TYPES = ['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'];
+const JOB_TYPES = ['Electrician', 'Plumber', 'Lab Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'MTS', 'AMC', 'Peon'];
 const FLOORS = ['Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6'];
 const RESPONSIBILITIES = ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure'];
 const BLOCKS = ['MSI', 'MSIT', 'MBA'];
@@ -132,6 +132,7 @@ export default function LoginScreen({ navigation }) {
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           
           <View style={styles.header}>
+            <Image source={require('../../../assets/msi_logo.png')} style={styles.headerLogo} />
             <View style={styles.logoRow}>
               <View style={[styles.logoDot, { backgroundColor: activeRole.color }]} />
               <Text style={styles.brand}>CampusFix</Text>
@@ -303,6 +304,13 @@ export default function LoginScreen({ navigation }) {
             </TouchableOpacity>
 
           </View>
+          
+          {/* Branding */}
+          <View style={styles.branding}>
+            <Text style={styles.brandingText}>Managed by Maharaja Surajmal Institute</Text>
+            <Text style={styles.versionText}>v2.1.0 • Stable</Text>
+          </View>
+
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -315,6 +323,7 @@ const styles = StyleSheet.create({
   bubble: { position: 'absolute' },
   container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 60 },
   header: { alignItems: 'flex-start', marginBottom: 30, paddingLeft: 6 },
+  headerLogo: { width: 50, height: 50, borderRadius: 10, marginBottom: 16 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   logoDot: { width: 14, height: 14, borderRadius: 7 },
   brand: { fontSize: 32, fontWeight: '900', color: '#1e293b', letterSpacing: -1 },
@@ -343,4 +352,7 @@ const styles = StyleSheet.create({
   chipActive: { },
   chipText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
   chipTextActive: { color: '#fff' },
+  branding: { marginTop: 40, alignItems: 'center', opacity: 0.5, paddingBottom: 20 },
+  brandingText: { fontSize: 11, fontWeight: '700', color: Colors.text, textTransform: 'uppercase', letterSpacing: 1 },
+  versionText: { fontSize: 10, color: Colors.textMuted, marginTop: 4 },
 });

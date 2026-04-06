@@ -8,7 +8,7 @@ const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Staff Room'
 
 const DYNAMIC_ISSUES = {
   Classroom: ['Projector', 'Fan', 'AC', 'Lights', 'Benches/Desks', 'Board'],
-  Lab: ['Computers', 'Keyboards', 'Mouse', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
+  Lab: ['Computers', 'Keyboards', 'Mouse', 'Printers', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
   Corridor: ['Lights', 'CCTV', 'Cleanliness', 'Electrical'],
   Washroom: ['Water Supply', 'Flush', 'Cleanliness', 'Broken Fixtures'],
   'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet'],
@@ -18,8 +18,9 @@ const DYNAMIC_ISSUES = {
 const NewComplaint = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    title: '', description: '', locationType: 'Classroom', 
-    roomNumber: '', block: 'MSI', floor: '', issues: []
+    title: '', description: '', locationType: 'Classroom',
+    roomNumber: '', block: 'MSI', floor: '1', issues: [],
+    computerNumber: '', mouseNumber: '', keyboardNumber: '', printerNumber: ''
   });
   
   const [photos, setPhotos] = useState([]);
@@ -159,15 +160,20 @@ const NewComplaint = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Floor</label>
-                  <div className="relative">
-                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Layers className="h-5 w-5 text-slate-400" />
-                     </div>
-                     <input type="text" name="floor" value={formData.floor} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:placeholder-slate-500 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., Floor 1" />
-                  </div>
-                </div>
+                 <div>
+                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Floor</label>
+                   <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                         <Layers className="h-5 w-5 text-slate-400" />
+                      </div>
+                      <select name="floor" value={formData.floor} onChange={handleChange} className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800 appearance-none cursor-pointer">
+                        {[1, 2, 3, 4, 5, 6, 7].map(f => <option key={f} value={f}>Floor {f}</option>)}
+                      </select>
+                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                   </div>
+                 </div>
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Location Type</label>
@@ -182,6 +188,18 @@ const NewComplaint = () => {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                      </div>
                   </div>
+                </div>
+
+                <div>
+                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
+                     {formData.locationType === 'Lab' ? 'Lab Number' : 'Room Number'}
+                   </label>
+                   <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                         <DoorOpen className="h-5 w-5 text-slate-400 transition-all" />
+                      </div>
+                      <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:placeholder-slate-500 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder={formData.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'} />
+                   </div>
                 </div>
 
                 {formData.locationType && DYNAMIC_ISSUES[formData.locationType] && (
@@ -211,17 +229,35 @@ const NewComplaint = () => {
                 </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
-                    {formData.locationType === 'Lab' ? 'Lab Number' : 'Room Number'}
-                  </label>
-                  <div className="relative">
-                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <DoorOpen className="h-5 w-5 text-slate-400 transition-all" />
-                     </div>
-                     <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:placeholder-slate-500 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder={formData.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'} />
-                  </div>
-                </div>
+                 {/* Conditional Item Number Fields */}
+                 {formData.locationType === 'Lab' && (
+                   <>
+                     {formData.issues.includes('Computers') && (
+                       <div>
+                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Computer Number</label>
+                         <input type="text" name="computerNumber" value={formData.computerNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3.5 dark:bg-slate-800/50 dark:text-white shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., PC-01" />
+                       </div>
+                     )}
+                     {formData.issues.includes('Keyboards') && (
+                       <div>
+                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Keyboard Number</label>
+                         <input type="text" name="keyboardNumber" value={formData.keyboardNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3.5 dark:bg-slate-800/50 dark:text-white shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., KB-01" />
+                       </div>
+                     )}
+                     {formData.issues.includes('Mouse') && (
+                       <div>
+                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Mouse Number</label>
+                         <input type="text" name="mouseNumber" value={formData.mouseNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3.5 dark:bg-slate-800/50 dark:text-white shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., M-01" />
+                       </div>
+                     )}
+                     {formData.issues.includes('Printers') && (
+                       <div>
+                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Printer Number</label>
+                         <input type="text" name="printerNumber" value={formData.printerNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3.5 dark:bg-slate-800/50 dark:text-white shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., PRN-01" />
+                       </div>
+                     )}
+                   </>
+                 )}
              </div>
 
              <div className="pt-6 border-t border-slate-100 dark:border-slate-800/50">

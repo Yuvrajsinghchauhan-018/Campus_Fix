@@ -1,0 +1,24 @@
+ backend/controllers/complaintController.js         |     6 +-
+ backend/controllers/maintainerController.js        |     4 +-
+ backend/models/Complaint.js                        |     4 +
+ backend/models/User.js                             |     2 +-
+ backend/scripts/migrate-job-types.js               |    26 +
+ frontend/node_modules/.vite/deps/_metadata.json    |    26 +-
+ frontend/node_modules/.vite/deps/chunk-2WIBB5DE.js |  1906 --
+ .../node_modules/.vite/deps/chunk-2WIBB5DE.js.map  |     7 -
+ frontend/node_modules/.vite/deps/chunk-6ZTKJVT4.js | 21628 -------------------
+ .../node_modules/.vite/deps/chunk-6ZTKJVT4.js.map  |     7 -
+ frontend/node_modules/.vite/deps/chunk-BNJCGGFL.js |   928 -
+ .../node_modules/.vite/deps/chunk-BNJCGGFL.js.map  |     7 -
+ frontend/src/assets/images/msi logo.png            |   Bin 0 -> 23219 bytes
+ frontend/src/components/common/AuthModal.jsx       |     2 +-
+ frontend/src/components/common/Navbar.jsx          |     4 +-
+ frontend/src/pages/Home.jsx                        |    47 +-
+ .../src/pages/authority/AuthorityDashboard.jsx     |    53 +-
+ frontend/src/pages/common/Profile.jsx              |    15 +-
+ .../src/pages/maintainer/MaintainerDashboard.jsx   |    44 +-
+ frontend/src/pages/student/NewComplaint.jsx        |    82 +-
+ frontend/src/pages/student/StudentDashboard.jsx    |     9 +-
+ mobile/src/screens/auth/LoginScreen.js             |     2 +-
+ .../src/screens/authority/AddMaintainerScreen.js   |     2 +-
+ 23 files changed, 237 insertions(+), 24574 deletions(-)

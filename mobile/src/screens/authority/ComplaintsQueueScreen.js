@@ -280,7 +280,20 @@ export default function ComplaintsQueueScreen({ navigation }) {
 
             <Text style={styles.fieldLabel}>SELECT MAINTAINER</Text>
             <ScrollView style={styles.maintainerList} nestedScrollEnabled>
-              {maintainers.map(m => (
+              {maintainers
+                .filter(m => {
+                  const categoryToMaintainer = {
+                    'Electrical': ['Electrician'],
+                    'Plumbing': ['Plumber'],
+                    'IT Systems': ['Lab Technician'],
+                    'Lab Management': ['Lab Technician', 'Electrician', 'MTS', 'AMC', 'Peon'],
+                    'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
+                  };
+                  return selectedComp?.categories?.some(cat =>
+                    categoryToMaintainer[cat]?.includes(m.jobType)
+                  ) || false;
+                })
+                .map(m => (
                 <TouchableOpacity
                   key={m._id}
                   style={[styles.maintainerOption, assignData.assignedMaintainer === m._id && styles.maintainerOptionActive]}

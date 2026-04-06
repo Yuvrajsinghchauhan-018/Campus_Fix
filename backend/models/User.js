@@ -35,7 +35,7 @@ const UserSchema = new mongoose.Schema({
   },
   jobType: { 
     type: String, 
-    enum: ['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
+    enum: ['Electrician', 'Plumber', 'Lab Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'MTS', 'AMC', 'Peon']
   },
   department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
   floors: [{ 

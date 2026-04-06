@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { User, Mail, Phone, Calendar, Shield, MapPin, Briefcase, Award, CheckCircle, ArrowLeft } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Shield, MapPin, Briefcase, Award, CheckCircle, ArrowLeft, Layers } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Profile = () => {
@@ -36,6 +36,19 @@ const Profile = () => {
                             <div>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assigned Block</p>
                                 <p className="font-bold text-slate-700 dark:text-slate-200">{user.block || 'All Blocks'}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                <Layers className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assigned Floors</p>
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                    {user.floors?.length > 0 ? user.floors.map(f => (
+                                        <span key={f} className="px-2 py-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">{f}</span>
+                                    )) : <p className="font-bold text-slate-700 dark:text-slate-200">All Floors</p>}
+                                </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50 col-span-full">

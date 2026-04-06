@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../../api/axios';
 import { Colors } from '../../theme/colors';
 
-const JOB_TYPES = ['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Civil Worker'];
+const JOB_TYPES = ['Electrician', 'Plumber', 'Lab Technician', 'AC Mechanic', 'Carpenter', 'Civil Worker', 'MTS', 'AMC', 'Peon'];
 
 export default function AddMaintainerScreen({ navigation }) {
   const [form, setForm] = useState({ name: '', phone: '', jobType: 'Electrician' });

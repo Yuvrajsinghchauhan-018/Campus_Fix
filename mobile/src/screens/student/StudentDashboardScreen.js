@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,13 +52,16 @@ export default function StudentDashboardScreen({ navigation }) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerTop}>
+          <Image source={require('../../../assets/msi_logo.png')} style={styles.logo} />
+          <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+            <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerBottom}>
           <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0]}! 👋</Text>
           <Text style={styles.subtitle}>Track your maintenance requests</Text>
         </View>
-        <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-          <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -95,6 +98,11 @@ export default function StudentDashboardScreen({ navigation }) {
             <ComplaintCard key={c._id} complaint={c} onPress={() => navigation.navigate('ComplaintDetail', { id: c._id })} />
           ))
         )}
+        {/* Branding */}
+        <View style={styles.branding}>
+          <Text style={styles.brandingText}>Managed by Maharaja Surajmal Institute</Text>
+          <Text style={styles.versionText}>v2.1.0 • Stable</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -110,9 +118,12 @@ const StatCard = ({ label, value, color, icon }) => (
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.border },
-  welcome: { fontSize: 20, fontWeight: '800', color: Colors.text },
-  subtitle: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  header: { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.border },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  logo: { width: 40, height: 40, borderRadius: 8 },
+  headerBottom: {},
+  welcome: { fontSize: 22, fontWeight: '900', color: Colors.text, letterSpacing: -0.5 },
+  subtitle: { fontSize: 13, color: Colors.textMuted, marginTop: 2, fontWeight: '500' },
   logoutBtn: { padding: 8 },
   scroll: { padding: 16, paddingBottom: 40 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
@@ -127,4 +138,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '800', color: Colors.text, marginBottom: 14 },
   empty: { alignItems: 'center', padding: 40, gap: 10 },
   emptyText: { color: Colors.textMuted, textAlign: 'center', fontSize: 14 },
+  branding: { marginTop: 40, alignItems: 'center', opacity: 0.5, paddingBottom: 20 },
+  brandingText: { fontSize: 11, fontWeight: '700', color: Colors.text, textTransform: 'uppercase', letterSpacing: 1 },
+  versionText: { fontSize: 10, color: Colors.textMuted, marginTop: 4 },
 });

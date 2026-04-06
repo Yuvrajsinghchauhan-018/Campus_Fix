@@ -226,11 +226,10 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                   <div className="flex mb-8 bg-slate-100 dark:bg-slate-800/50 rounded-2xl p-1.5 border border-slate-200 dark:border-white/5">
                     <button
                       type="button"
-                      className={`flex-1 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
-                        tab === 'login'
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                          : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                      }`}
+                      className={`flex-1 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${tab === 'login'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                        : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                        }`}
                       onClick={() => {
                         setTab('login');
                         setError('');
@@ -240,11 +239,10 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                     </button>
                     <button
                       type="button"
-                      className={`flex-1 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
-                        tab === 'register'
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                          : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                      }`}
+                      className={`flex-1 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${tab === 'register'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                        : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                        }`}
                       onClick={() => {
                         setTab('register');
                         setError('');
@@ -276,9 +274,29 @@ const AuthModal = ({ isOpen, onClose, role }) => {
 
                     {role === 'maintainer' && (
                       <div className="space-y-1.5 md:col-span-2">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">Job Type</label>
-                        <select name="jobType" required value={formData.jobType} onChange={handleChange} className={fieldClassName}>
-                          {['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'].map((job) => (
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
+                          Job Type
+                        </label>
+                        <select
+                          name="jobType"
+                          required
+                          value={formData.jobType}
+                          onChange={handleChange}
+                          className={fieldClassName}
+                        >
+                          {[
+                            'Electrician',
+                            'Plumber',
+                            'IT Technician',
+                            'AC Mechanic',
+                            'Carpenter',
+                            'Painter',
+                            'Civil Worker',
+                            'Sweeper',
+                            'MTS',
+                            'AMC',
+                            'Peon',
+                          ].map((job) => (
                             <option key={job} value={job}>
                               {job}
                             </option>
@@ -327,11 +345,10 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                                 type="button"
                                 key={fl}
                                 onClick={() => handleFloorToggle(fl)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                                  formData.floors.includes(fl)
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
-                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 dark:bg-slate-800/50 dark:text-slate-400 dark:border-white/5 dark:hover:border-white/10'
-                                }`}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${formData.floors.includes(fl)
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
+                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 dark:bg-slate-800/50 dark:text-slate-400 dark:border-white/5 dark:hover:border-white/10'
+                                  }`}
                               >
                                 {fl}
                               </button>
@@ -346,11 +363,10 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                                 type="button"
                                 key={resp}
                                 onClick={() => handleResponsibilityToggle(resp)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                                  formData.responsibilities.includes(resp)
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
-                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 dark:bg-slate-800/50 dark:text-slate-400 dark:border-white/5 dark:hover:border-white/10'
-                                }`}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${formData.responsibilities.includes(resp)
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
+                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 dark:bg-slate-800/50 dark:text-slate-400 dark:border-white/5 dark:hover:border-white/10'
+                                  }`}
                               >
                                 {resp}
                               </button>
