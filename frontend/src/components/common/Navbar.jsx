@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
 import { LogOut, Bell, User as UserIcon, Menu } from 'lucide-react';
 
+import logo from '../../assets/images/msi logo.png';
+
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -19,7 +21,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xl">C</div>
+            <img src={logo} alt="MSI Logo" className="w-10 h-10 object-contain" />
             <span className="font-jakarta font-bold text-xl tracking-tight text-slate-900 dark:text-white">CampusFix</span>
           </Link>
 

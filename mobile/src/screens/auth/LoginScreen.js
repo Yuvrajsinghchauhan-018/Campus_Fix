@@ -16,7 +16,7 @@ const ROLES = [
   { key: 'maintainer', label: 'Maintainer', icon: 'construct', color: '#0891b2', bg: '#ecfeff' },
 ];
 
-const JOB_TYPES = ['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'];
+const JOB_TYPES = ['Electrician', 'Plumber', 'Lab Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'MTS', 'AMC', 'Peon'];
 const FLOORS = ['Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6'];
 const RESPONSIBILITIES = ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure'];
 const BLOCKS = ['MSI', 'MSIT', 'MBA'];
