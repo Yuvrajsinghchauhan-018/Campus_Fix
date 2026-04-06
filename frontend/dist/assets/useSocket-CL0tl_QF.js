@@ -1,0 +1,1 @@
+import{r as t}from"./vendor-B8TwMZvr.js";import{l as p}from"./realtime-CR6yWSDV.js";import{S as f}from"./index-C12G45-l.js";const s=p(f,{transports:["websocket","polling"]}),i=(o,r)=>{t.useEffect(()=>(s.on(o,r),()=>{s.off(o,r)}),[o,r])};export{i as u};
