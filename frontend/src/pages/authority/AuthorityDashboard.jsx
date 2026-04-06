@@ -275,9 +275,9 @@ const ComplaintsQueue = () => {
                                             const categoryToMaintainer = {
                                                 'Electrical': ['Electrician'],
                                                 'Plumbing': ['Plumber'],
-                                                'IT Systems': ['Lab Technician'],
-                                                'Lab Management': ['Lab Technician', 'Electrician', 'MTS', 'AMC', 'Peon'],
-                                                'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
+                                                'IT Systems': ['Lab Technician', 'Printer Repair'],
+                                                'Lab Management': ['Lab Technician', 'Printer Repair', 'Electrician', 'MTS', 'AMC', 'Peon'],
+                                                'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'Printer Repair']
                                             };
                                             // Show maintainers whose jobType matches at least one category of the complaint
                                             return selectedComp.categories?.some(cat => 
@@ -549,7 +549,7 @@ const AddMaintainerPanel = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Operative Domain</label>
                                     <div className="grid grid-cols-2 gap-3 relative">
-                                        {['Electrician','Plumber','Lab Technician','AC Mechanic','Carpenter','Civil Worker', 'MTS', 'AMC', 'Peon'].map(j => (
+                                        {['Electrician','Plumber','Lab Technician','Printer Repair','AC Mechanic','Carpenter','Civil Worker', 'MTS', 'AMC', 'Peon'].map(j => (
                                             <div 
                                                 key={j} 
                                                 onClick={() => setNewMaint({...newMaint, jobType: j})}

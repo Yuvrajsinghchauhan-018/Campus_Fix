@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../../api/axios';
 import { Colors } from '../../theme/colors';
 
-const JOB_TYPES = ['Electrician', 'Plumber', 'Lab Technician', 'AC Mechanic', 'Carpenter', 'Civil Worker', 'MTS', 'AMC', 'Peon'];
+const JOB_TYPES = ['Electrician', 'Plumber', 'Lab Technician', 'Printer Repair', 'AC Mechanic', 'Carpenter', 'Civil Worker', 'MTS', 'AMC', 'Peon'];
 
 export default function AddMaintainerScreen({ navigation }) {
   const [form, setForm] = useState({ name: '', phone: '', jobType: 'Electrician' });
@@ -59,14 +59,14 @@ export default function AddMaintainerScreen({ navigation }) {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.infoBox}>
             <Ionicons name="information-circle" size={18} color={Colors.primary} />
-            <Text style={styles.infoText}>Bypass pending approvals and directly provision field agents. Maintainer logs in via phone OTP.</Text>
+            <Text style={styles.infoText}>Add a maintainer directly here. They can start using the app after you create the account.</Text>
           </View>
 
           <Label text="Full Name *" />
           <TextInput style={styles.input} placeholder="e.g., Ramesh Singh" placeholderTextColor={Colors.textMuted} value={form.name} onChangeText={v => update('name', v)} />
 
           <Label text="Secure Phone Number *" />
-          <TextInput style={styles.input} placeholder="10-digit number used for authentication" placeholderTextColor={Colors.textMuted} value={form.phone} onChangeText={v => update('phone', v)} keyboardType="phone-pad" maxLength={10} />
+          <TextInput style={styles.input} placeholder="Enter 10-digit phone number" placeholderTextColor={Colors.textMuted} value={form.phone} onChangeText={v => update('phone', v)} keyboardType="phone-pad" maxLength={10} />
 
           <Label text="Operative Domain *" />
           <View style={styles.chipGrid}>

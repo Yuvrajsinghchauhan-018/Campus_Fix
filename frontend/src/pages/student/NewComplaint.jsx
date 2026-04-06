@@ -11,16 +11,17 @@ const DYNAMIC_ISSUES = {
   Lab: ['Computers', 'Keyboards', 'Mouse', 'Printers', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
   Corridor: ['Lights', 'CCTV', 'Cleanliness', 'Electrical'],
   Washroom: ['Water Supply', 'Flush', 'Cleanliness', 'Broken Fixtures'],
-  'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet'],
+  'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet', 'Printers'],
   'Common Area': ['Lights', 'Cleanliness', 'Furniture']
 };
+const LAB_COMPUTER_RELATED_ISSUES = ['Computers', 'Keyboards', 'Mouse'];
 
 const NewComplaint = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '', description: '', locationType: 'Classroom',
     roomNumber: '', block: 'MSI', floor: '1', issues: [],
-    computerNumber: '', mouseNumber: '', keyboardNumber: '', printerNumber: ''
+    computerNumber: '', printerNumber: ''
   });
   
   const [photos, setPhotos] = useState([]);
@@ -40,9 +41,14 @@ const NewComplaint = () => {
   const toggleIssue = (issue) => {
     setFormData(f => {
       const arr = f.issues || [];
+      const nextIssues = arr.includes(issue) ? arr.filter(i => i !== issue) : [...arr, issue];
+      const hasComputerRelatedIssue = LAB_COMPUTER_RELATED_ISSUES.some(item => nextIssues.includes(item));
+
       return {
         ...f,
-        issues: arr.includes(issue) ? arr.filter(i => i !== issue) : [...arr, issue]
+        issues: nextIssues,
+        computerNumber: hasComputerRelatedIssue ? f.computerNumber : '',
+        printerNumber: nextIssues.includes('Printers') ? f.printerNumber : ''
       };
     });
   };
@@ -67,9 +73,6 @@ const NewComplaint = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.description.length < 20) {
-      return setError('Description must be at least 20 characters.');
-    }
     setSubmitting(true);
     setError('');
 
@@ -132,7 +135,7 @@ const NewComplaint = () => {
                   <div className="absolute top-4 left-4 pointer-events-none">
                      <FileText className="h-5 w-5 text-slate-400" />
                   </div>
-                  <textarea name="description" value={formData.description} onChange={handleChange} required rows={4} className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:placeholder-slate-500 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="Describe the issue in detail (min 20 characters)..." />
+                  <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:placeholder-slate-500 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="Describe the issue in detail (optional)..." />
                </div>
              </div>
 
@@ -232,22 +235,10 @@ const NewComplaint = () => {
                  {/* Conditional Item Number Fields */}
                  {formData.locationType === 'Lab' && (
                    <>
-                     {formData.issues.includes('Computers') && (
+                     {LAB_COMPUTER_RELATED_ISSUES.some(issue => formData.issues.includes(issue)) && (
                        <div>
-                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Computer Number</label>
+                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Computer Number (written at the back of your screen)</label>
                          <input type="text" name="computerNumber" value={formData.computerNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3.5 dark:bg-slate-800/50 dark:text-white shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., PC-01" />
-                       </div>
-                     )}
-                     {formData.issues.includes('Keyboards') && (
-                       <div>
-                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Keyboard Number</label>
-                         <input type="text" name="keyboardNumber" value={formData.keyboardNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3.5 dark:bg-slate-800/50 dark:text-white shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., KB-01" />
-                       </div>
-                     )}
-                     {formData.issues.includes('Mouse') && (
-                       <div>
-                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">Mouse Number</label>
-                         <input type="text" name="mouseNumber" value={formData.mouseNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3.5 dark:bg-slate-800/50 dark:text-white shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder="e.g., M-01" />
                        </div>
                      )}
                      {formData.issues.includes('Printers') && (

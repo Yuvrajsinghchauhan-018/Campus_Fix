@@ -288,6 +288,7 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                             'Electrician',
                             'Plumber',
                             'IT Technician',
+                            'Printer Repair',
                             'AC Mechanic',
                             'Carpenter',
                             'Painter',
