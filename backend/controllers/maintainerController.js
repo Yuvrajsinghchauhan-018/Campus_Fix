@@ -104,9 +104,9 @@ exports.getApprovedMaintainers = async (req, res) => {
         const typeMap = {
           'Electrical': ['Electrician'],
           'Plumbing': ['Plumber'],
-          'IT Systems': ['Lab Technician'],
-          'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'],
-          'Lab Management': ['Lab Technician', 'Electrician', 'MTS', 'AMC', 'Peon']
+          'IT Systems': ['Lab Technician', 'Printer Repair'],
+          'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'Printer Repair'],
+          'Lab Management': ['Lab Technician', 'Printer Repair', 'Electrician', 'MTS', 'AMC', 'Peon']
         };
         
         let allowedTypes = [];

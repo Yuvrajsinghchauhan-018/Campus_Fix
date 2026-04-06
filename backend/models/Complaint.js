@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ComplaintSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
   categories: [{ 
     type: String, 
     enum: ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure']

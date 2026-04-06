@@ -1,21 +1,29 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-
-import Home from './pages/Home';
-import StudentDashboard from './pages/student/StudentDashboard';
-import AuthorityDashboard from './pages/authority/AuthorityDashboard';
-import MaintainerDashboard from './pages/maintainer/MaintainerDashboard';
-import Profile from './pages/common/Profile';
 
 // Component imports
 import Navbar from './components/common/Navbar';
 import Toaster from './components/common/Toaster';
 
+const Home = lazy(() => import('./pages/Home'));
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
+const AuthorityDashboard = lazy(() => import('./pages/authority/AuthorityDashboard'));
+const MaintainerDashboard = lazy(() => import('./pages/maintainer/MaintainerDashboard'));
+const Profile = lazy(() => import('./pages/common/Profile'));
+
+const RouteFallback = () => (
+  <div className="flex h-[calc(100vh-4rem)] items-center justify-center text-base text-slate-500 dark:text-slate-400">
+    Loading page...
+  </div>
+);
+
 // Route Guards
 const PrivateRoute = ({ children, allowedRoles }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="flex h-screen items-center justify-center text-xl">Loading...</div>;
+  const { user, token, loading } = useAuth();
+  if (token && loading && !user) {
+    return <div className="flex h-screen items-center justify-center text-xl">Restoring session...</div>;
+  }
   if (!user) return <Navigate to="/" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
@@ -24,8 +32,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
 };
 
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="flex h-screen items-center justify-center text-xl">Loading...</div>;
+  const { user } = useAuth();
   if (user && user.role) {
     // Redirect authenticated users to their respective dashboard
     return <Navigate to={`/${user.role}`} replace />;
@@ -48,41 +55,43 @@ function App() {
         <Toaster />
         <Navbar />
         <main className="flex-1 w-full">
-          <Routes>
-            <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
-            
-            {/* Student Routes */}
-            <Route path="/student/*" element={
-              <PrivateRoute allowedRoles={['student']}>
-                <StudentDashboard />
-              </PrivateRoute>
-            } />
-            
-            {/* Authority Routes */}
-            <Route path="/authority/*" element={
-              <PrivateRoute allowedRoles={['authority']}>
-                <AuthorityDashboard />
-              </PrivateRoute>
-            } />
-            
-            {/* Maintainer Routes */}
-            <Route path="/maintainer/*" element={
-              <PrivateRoute allowedRoles={['maintainer']}>
-                <ApprovedRoute>
-                  <MaintainerDashboard />
-                </ApprovedRoute>
-              </PrivateRoute>
-            } />
-            
-            <Route path="/profile" element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            } />
-            
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
+              
+              {/* Student Routes */}
+              <Route path="/student/*" element={
+                <PrivateRoute allowedRoles={['student']}>
+                  <StudentDashboard />
+                </PrivateRoute>
+              } />
+              
+              {/* Authority Routes */}
+              <Route path="/authority/*" element={
+                <PrivateRoute allowedRoles={['authority']}>
+                  <AuthorityDashboard />
+                </PrivateRoute>
+              } />
+              
+              {/* Maintainer Routes */}
+              <Route path="/maintainer/*" element={
+                <PrivateRoute allowedRoles={['maintainer']}>
+                  <ApprovedRoute>
+                    <MaintainerDashboard />
+                  </ApprovedRoute>
+                </PrivateRoute>
+              } />
+              
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              } />
+              
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </Router>

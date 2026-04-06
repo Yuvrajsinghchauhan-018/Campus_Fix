@@ -19,15 +19,16 @@ const DYNAMIC_ISSUES = {
   Lab: ['Computers', 'Keyboards', 'Mouse', 'Printers', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
   Corridor: ['Lights', 'CCTV', 'Cleanliness', 'Electrical'],
   Washroom: ['Water Supply', 'Flush', 'Cleanliness', 'Broken Fixtures'],
-  'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet'],
+  'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet', 'Printers'],
   'Common Area': ['Lights', 'Cleanliness', 'Furniture']
 };
+const LAB_COMPUTER_RELATED_ISSUES = ['Computers', 'Keyboards', 'Mouse'];
 
 export default function NewComplaintScreen({ navigation }) {
   const [form, setForm] = useState({
     title: '', description: '',
     locationType: 'Classroom', roomNumber: '', block: 'MSI', floor: '1', issues: [],
-    computerNumber: '', mouseNumber: '', keyboardNumber: '', printerNumber: ''
+    computerNumber: '', printerNumber: ''
   });
   const [photos, setPhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -45,7 +46,13 @@ export default function NewComplaintScreen({ navigation }) {
     setForm(f => {
       const arr = f.issues || [];
       const newIssues = arr.includes(issue) ? arr.filter(i => i !== issue) : [...arr, issue];
-      return { ...f, issues: newIssues };
+      const hasComputerRelatedIssue = LAB_COMPUTER_RELATED_ISSUES.some(item => newIssues.includes(item));
+      return {
+        ...f,
+        issues: newIssues,
+        computerNumber: hasComputerRelatedIssue ? f.computerNumber : '',
+        printerNumber: newIssues.includes('Printers') ? f.printerNumber : '',
+      };
     });
   };
 
@@ -69,7 +76,6 @@ export default function NewComplaintScreen({ navigation }) {
 
   const handleSubmit = async () => {
     if (!form.title.trim()) { setError('Please enter a title.'); return; }
-    if (form.description.length < 20) { setError('Description must be at least 20 characters.'); return; }
     setSubmitting(true);
     setError('');
     try {
@@ -134,7 +140,7 @@ export default function NewComplaintScreen({ navigation }) {
 
           {/* Description */}
           <Label text="Description" />
-          <TextInput style={[styles.input, styles.textarea]} placeholder="Describe the issue in detail (min 20 chars)..."
+          <TextInput style={[styles.input, styles.textarea]} placeholder="Describe the issue in detail (optional)..."
             placeholderTextColor={Colors.textMuted} value={form.description} onChangeText={v => update('description', v)}
             multiline numberOfLines={4} textAlignVertical="top" />
 
@@ -193,25 +199,11 @@ export default function NewComplaintScreen({ navigation }) {
           {/* Conditional Item Number Fields (Lab only) */}
           {form.locationType === 'Lab' && (
             <>
-              {form.issues.includes('Computers') && (
+              {LAB_COMPUTER_RELATED_ISSUES.some(issue => form.issues.includes(issue)) && (
                 <>
-                  <Label text="Computer Number" />
+                  <Label text="Computer Number (written at the back of your screen)" />
                   <TextInput style={styles.input} placeholder="e.g., PC-01" placeholderTextColor={Colors.textMuted}
                     value={form.computerNumber} onChangeText={v => update('computerNumber', v)} />
-                </>
-              )}
-              {form.issues.includes('Keyboards') && (
-                <>
-                  <Label text="Keyboard Number" />
-                  <TextInput style={styles.input} placeholder="e.g., KB-01" placeholderTextColor={Colors.textMuted}
-                    value={form.keyboardNumber} onChangeText={v => update('keyboardNumber', v)} />
-                </>
-              )}
-              {form.issues.includes('Mouse') && (
-                <>
-                  <Label text="Mouse Number" />
-                  <TextInput style={styles.input} placeholder="e.g., M-01" placeholderTextColor={Colors.textMuted}
-                    value={form.mouseNumber} onChangeText={v => update('mouseNumber', v)} />
                 </>
               )}
               {form.issues.includes('Printers') && (
