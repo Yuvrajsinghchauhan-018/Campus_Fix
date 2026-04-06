@@ -237,7 +237,7 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                       <div className="space-y-1.5 md:col-span-2">
                         <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Job Type</label>
                         <select name="jobType" required value={formData.jobType} onChange={handleChange} className="input-field py-3 bg-slate-800/40 border-slate-700/50 focus:bg-slate-800 text-sm">
-                          {['Electrician','Plumber','IT Technician','AC Mechanic','Carpenter','Painter','Civil Worker','Sweeper'].map(job => (
+                          {['Electrician','Plumber','Lab Technician','AC Mechanic','Carpenter','Painter','Civil Worker','Sweeper', 'MTS', 'AMC', 'Peon'].map(job => (
                             <option key={job} value={job}>{job}</option>
                           ))}
                         </select>

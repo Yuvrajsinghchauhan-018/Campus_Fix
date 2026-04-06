@@ -275,8 +275,8 @@ const ComplaintsQueue = () => {
                                             const categoryToMaintainer = {
                                                 'Electrical': ['Electrician'],
                                                 'Plumbing': ['Plumber'],
-                                                'IT Systems': ['IT Technician'],
-                                                'Lab Management': ['IT Technician', 'Electrician', 'Carpenter'],
+                                                'IT Systems': ['Lab Technician'],
+                                                'Lab Management': ['Lab Technician', 'Electrician', 'MTS', 'AMC', 'Peon'],
                                                 'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
                                             };
                                             // Show maintainers whose jobType matches at least one category of the complaint
@@ -549,7 +549,7 @@ const AddMaintainerPanel = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Operative Domain</label>
                                     <div className="grid grid-cols-2 gap-3 relative">
-                                        {['Electrician','Plumber','IT Technician','AC Mechanic','Carpenter','Civil Worker'].map(j => (
+                                        {['Electrician','Plumber','Lab Technician','AC Mechanic','Carpenter','Civil Worker', 'MTS', 'AMC', 'Peon'].map(j => (
                                             <div 
                                                 key={j} 
                                                 onClick={() => setNewMaint({...newMaint, jobType: j})}
