@@ -1,19 +1,51 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Dimensions, Image
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../theme/colors';
 
-const { width } = Dimensions.get('window');
-
 const ROLES = [
-  { key: 'student', label: 'Student', icon: 'person', color: '#2563eb', bg: '#eff6ff' },
-  { key: 'authority', label: 'Authority', icon: 'shield', color: '#7c3aed', bg: '#f5f3ff' },
-  { key: 'maintainer', label: 'Maintainer', icon: 'construct', color: '#0891b2', bg: '#ecfeff' },
+  {
+    key: 'student',
+    label: 'Student',
+    subtitle: 'Portal Access',
+    icon: 'school-outline',
+    accent: '#1d4ed8',
+    soft: '#eef4ff',
+    badge: '#ecfdf5',
+  },
+  {
+    key: 'authority',
+    label: 'Authority',
+    subtitle: 'Admin Access',
+    icon: 'shield-checkmark-outline',
+    accent: '#0f766e',
+    soft: '#edfdfa',
+    badge: '#eff6ff',
+  },
+  {
+    key: 'maintainer',
+    label: 'Maintainer',
+    subtitle: 'Staff Access',
+    icon: 'construct-outline',
+    accent: '#7c3aed',
+    soft: '#f5f3ff',
+    badge: '#fff7ed',
+  },
 ];
 
 const JOB_TYPES = ['Electrician', 'Plumber', 'Lab Technician', 'Printer Repair', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'MTS', 'AMC', 'Peon'];
@@ -21,101 +53,185 @@ const FLOORS = ['Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6'
 const RESPONSIBILITIES = ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure'];
 const BLOCKS = ['MSI', 'MSIT', 'MBA'];
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
   const { login, register } = useAuth();
   const [role, setRole] = useState('student');
   const [tab, setTab] = useState('login');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [authSheetOpen, setAuthSheetOpen] = useState(false);
   const [msg, setMsg] = useState('');
 
   const [form, setForm] = useState({
-    name: '', email: '', collegeId: '', phone: '', password: '', 
-    confirmPassword: '', gender: 'Male', jobType: 'Electrician', 
-    adminSecretKey: '', block: 'MSI', floors: [], responsibilities: []
+    name: '',
+    email: '',
+    collegeId: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    gender: 'Male',
+    jobType: 'Electrician',
+    adminSecretKey: '',
+    block: 'MSI',
+    floors: [],
+    responsibilities: [],
   });
 
-  const updateForm = (key, value) => setForm(f => ({ ...f, [key]: value }));
+  const activeRole = useMemo(
+    () => ROLES.find((item) => item.key === role) || ROLES[0],
+    [role]
+  );
+
+  const updateForm = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
   const toggleArray = (key, item) => {
-    setForm(f => {
-      const arr = f[key];
-      if (arr.includes(item)) return { ...f, [key]: arr.filter(i => i !== item) };
-      return { ...f, [key]: [...arr, item] };
+    setForm((current) => {
+      const currentItems = current[key];
+      return currentItems.includes(item)
+        ? { ...current, [key]: currentItems.filter((value) => value !== item) }
+        : { ...current, [key]: [...currentItems, item] };
     });
   };
 
   const validateForm = () => {
     if (tab === 'register') {
-      if (!form.name || !form.phone) return "Name and Phone are required.";
-      if (form.phone.length !== 10) return "Phone number must be 10 digits.";
+      if (!form.name || !form.phone) return 'Name and phone are required.';
+      if (form.phone.length !== 10) return 'Phone number must be 10 digits.';
+
       if (role === 'authority') {
-        if (!form.email || !form.adminSecretKey) return "Email and Admin Secret Key are required.";
-        if (form.responsibilities.length === 0) return "Select at least one responsibility.";
-        if (form.floors.length === 0) return "Select at least one floor.";
+        if (!form.email || !form.adminSecretKey) return 'Email and admin secret key are required.';
+        if (form.responsibilities.length === 0) return 'Select at least one responsibility.';
+        if (form.floors.length === 0) return 'Select at least one floor.';
       } else if (role === 'student') {
-        if (!form.email.toLowerCase().endsWith('@gmail.com')) return "Please use a valid @gmail.com address.";
-        if (form.password !== form.confirmPassword) return "Passwords do not match.";
-        if (form.password.length < 6) return "Password must be at least 6 characters.";
+        if (!form.email.toLowerCase().endsWith('@gmail.com')) return 'Please use a valid @gmail.com address.';
+        if (form.password !== form.confirmPassword) return 'Passwords do not match.';
+        if (form.password.length < 6) return 'Password must be at least 6 characters.';
       }
     } else {
       if (role === 'authority') {
-        if (!form.email || !form.adminSecretKey) return "Email and Admin Secret Key required.";
+        if (!form.email || !form.adminSecretKey) return 'Email and admin secret key are required.';
       } else if (role === 'student') {
-        if (!form.email && !form.collegeId) return "Email or College ID required.";
-        if (!form.password) return "Password required.";
+        if (!form.email && !form.collegeId) return 'Enter your email or college ID.';
+        if (!form.password) return 'Password is required.';
       } else if (role === 'maintainer') {
-        if (!form.phone) return "Phone number required.";
-        if (form.phone.length !== 10) return "Phone number must be 10 digits.";
+        if (!form.phone) return 'Phone number is required.';
+        if (form.phone.length !== 10) return 'Phone number must be 10 digits.';
       }
     }
     return null;
   };
 
   const handleSubmit = async () => {
-    const err = validateForm();
-    if (err) { Alert.alert('Check Fields', err); return; }
+    const validationError = validateForm();
+    if (validationError) {
+      Alert.alert('Check Fields', validationError);
+      return;
+    }
 
-    setLoading(true); setMsg('');
+    setLoading(true);
+    setMsg('');
+
     try {
       if (tab === 'login') {
-        const p = { role };
-        if (role === 'authority') { p.email = form.email; p.adminSecretKey = form.adminSecretKey; }
-        else if (role === 'student') { p.password = form.password; p[form.email.includes('@') ? 'email' : 'collegeId'] = form.email || form.collegeId; }
-        else { p.phone = form.phone; }
-        const res = await login(p);
-        if (!res.success) throw new Error(res.message);
+        const payload = { role };
+
+        if (role === 'authority') {
+          payload.email = form.email;
+          payload.adminSecretKey = form.adminSecretKey;
+        } else if (role === 'student') {
+          payload.password = form.password;
+          payload[form.email.includes('@') ? 'email' : 'collegeId'] = form.email || form.collegeId;
+        } else {
+          payload.phone = form.phone;
+        }
+
+        const response = await login(payload);
+        if (!response.success) throw new Error(response.message);
       } else {
-        const res = await register({ ...form, role: role.toLowerCase() });
-        if (res.success || res.token) {
+        const response = await register({ ...form, role: role.toLowerCase() });
+
+        if (response.success || response.token) {
           if (role === 'maintainer') {
-            setMsg(res.message || 'Registration successful! Your account is under review.');
+            setMsg(response.message || 'Registration successful. Your account is waiting for approval.');
             setShowSuccess(true);
           } else if (role !== 'authority') {
-            Alert.alert('Success', 'Registration successful! Please login to continue.');
-            setTab('login'); updateForm('password', ''); updateForm('confirmPassword', '');
+            Alert.alert('Success', 'Registration successful. Please sign in to continue.');
+            setTab('login');
+            updateForm('password', '');
+            updateForm('confirmPassword', '');
           }
         }
       }
-    } catch (e) {
-      Alert.alert('Error', e?.response?.data?.message || e.message || 'An error occurred');
-    } finally { setLoading(false); }
+    } catch (error) {
+      Alert.alert('Error', error?.response?.data?.message || error.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const activeRole = ROLES.find(r => r.key === role);
+  const switchRole = (nextRole) => {
+    setRole(nextRole);
+    setTab('login');
+    setShowPassword(false);
+    setAuthSheetOpen(true);
+  };
+
+  const renderChipSelector = (title, items, selectedItems, onPress, multi = false) => (
+    <View style={styles.selectorSection}>
+      <Text style={styles.selectorTitle}>{title}</Text>
+      <Text style={styles.selectorHint}>{multi ? 'You can choose more than one.' : 'Choose one option.'}</Text>
+      <View style={styles.chipRow}>
+        {items.map((item) => {
+          const selected = Array.isArray(selectedItems) ? selectedItems.includes(item) : selectedItems === item;
+          return (
+            <TouchableOpacity
+              key={item}
+              style={[
+                styles.choiceChip,
+                selected && styles.choiceChipActive,
+              ]}
+              onPress={() => onPress(item)}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.choiceChipText, selected && styles.choiceChipTextActive]}>{item}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  const renderInput = (props) => (
+    <TextInput
+      {...props}
+      style={[styles.input, props.style]}
+      placeholderTextColor="#94a3b8"
+      autoCorrect={false}
+    />
+  );
+
+  const renderField = (label, props) => (
+    <View style={styles.fieldGroup}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {renderInput(props)}
+    </View>
+  );
 
   if (showSuccess) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={{ flex: 1, padding: 30, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: activeRole.bg, padding: 24, borderRadius: 28, marginBottom: 24 }}>
-            <Ionicons name="checkmark-circle" size={70} color={activeRole.color} />
+      <SafeAreaView style={styles.successSafe}>
+        <View style={styles.successWrap}>
+          <View style={[styles.successIconWrap, { backgroundColor: activeRole.soft }]}>
+            <Ionicons name="checkmark-circle" size={66} color={activeRole.accent} />
           </View>
-          <Text style={{ fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 16, color: Colors.text }}>Under Review</Text>
-          <Text style={{ fontSize: 16, textAlign: 'center', color: Colors.textMuted, lineHeight: 24, marginBottom: 36 }}>{msg}</Text>
-          <TouchableOpacity style={[styles.submitBtn, { width: '100%', backgroundColor: activeRole.color, paddingVertical: 18 }]} onPress={() => setShowSuccess(false)}>
-            <Text style={[styles.submitText, { fontSize: 18 }]}>Got It</Text>
+          <Text style={styles.successTitle}>Request Sent</Text>
+          <Text style={styles.successText}>{msg}</Text>
+          <TouchableOpacity
+            style={[styles.primaryButton, { backgroundColor: activeRole.accent, width: '100%' }]}
+            onPress={() => setShowSuccess(false)}
+          >
+            <Text style={styles.primaryButtonText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -124,235 +240,793 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Decorative Background Bubbles */}
-      <View style={[styles.bubble, { top: -60, left: -60, backgroundColor: 'rgba(37, 99, 235, 0.1)', width: 200, height: 200, borderRadius: 100 }]} />
-      <View style={[styles.bubble, { top: 120, right: -80, backgroundColor: 'rgba(124, 58, 237, 0.08)', width: 250, height: 250, borderRadius: 125 }]} />
+      <View style={styles.backgroundOrbTop} />
+      <View style={styles.backgroundOrbRight} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          
-          <View style={styles.header}>
-            <Image source={require('../../../assets/msi_logo.png')} style={styles.headerLogo} />
-            <View style={styles.logoRow}>
-              <View style={[styles.logoDot, { backgroundColor: activeRole.color }]} />
-              <Text style={styles.brand}>CampusFix</Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.topBar}>
+            <View style={styles.brandLockup}>
+              <View style={styles.brandLogoShell}>
+                <Image source={require('../../../assets/msi_logo.png')} style={styles.brandLogo} />
+              </View>
+              <View>
+                <Text style={styles.brandName}>CampusFix</Text>
+                <Text style={styles.brandSub}>Maharaja Surajmal Institute</Text>
+              </View>
             </View>
-            <Text style={styles.tagline}>Smart Campus, Seamless Maintenance</Text>
+            <View style={styles.menuButton}>
+              <Ionicons name="grid-outline" size={20} color={Colors.text} />
+            </View>
           </View>
 
-          {/* Role Picker */}
-          <View style={styles.roleWrapper}>
-            <View style={styles.roleRow}>
-              {ROLES.map(r => {
-                const isActive = role === r.key;
+          <View style={styles.hero}>
+            <View style={[styles.systemBadge, { backgroundColor: activeRole.badge }]}>
+              <View style={[styles.systemDot, { backgroundColor: activeRole.accent }]} />
+              <Text style={styles.systemBadgeText}>Institutional Maintenance System</Text>
+            </View>
+            <Text style={styles.heroTitle}>
+              The trusted platform for{'\n'}
+              <Text style={styles.heroTitleAccent}>campus care.</Text>
+            </Text>
+            <Text style={styles.heroText}>
+              Precision management for your academic and living environment.
+            </Text>
+          </View>
+
+          <View style={styles.portalSection}>
+            <TouchableOpacity
+              style={[styles.primaryPortalCard, role === 'student' && styles.portalCardActive, { borderColor: role === 'student' ? ROLES[0].accent : '#eef2f7' }]}
+              onPress={() => switchRole('student')}
+              activeOpacity={0.92}
+            >
+              <View style={styles.portalLeft}>
+                <View style={[styles.portalIconWrap, { backgroundColor: ROLES[0].soft }]}>
+                  <Ionicons name={ROLES[0].icon} size={22} color={ROLES[0].accent} />
+                </View>
+                <View>
+                  <Text style={styles.portalTitle}>Student</Text>
+                  <Text style={styles.portalSubtitle}>Portal Access</Text>
+                </View>
+              </View>
+              <Ionicons name="arrow-forward" size={18} color="#cbd5e1" />
+            </TouchableOpacity>
+
+            <View style={styles.secondaryPortalRow}>
+              {ROLES.slice(1).map((item) => {
+                const selected = role === item.key;
                 return (
                   <TouchableOpacity
-                    key={r.key}
-                    style={[styles.roleBtn, isActive && { backgroundColor: r.bg, borderColor: r.color }]}
-                    onPress={() => { setRole(r.key); setTab('login'); }}
-                    activeOpacity={0.7}
+                    key={item.key}
+                    style={[
+                      styles.secondaryPortalCard,
+                      selected && { borderColor: item.accent, backgroundColor: item.soft },
+                    ]}
+                    onPress={() => switchRole(item.key)}
+                    activeOpacity={0.92}
                   >
-                    <Ionicons name={r.icon} size={18} color={isActive ? r.color : Colors.textMuted} />
-                    <Text style={[styles.roleBtnText, isActive && { color: r.color }]}>{r.label}</Text>
+                    <View style={[styles.portalIconWrap, { backgroundColor: '#fff' }]}>
+                      <Ionicons name={item.icon} size={21} color={item.accent} />
+                    </View>
+                    <Text style={styles.secondaryPortalTitle}>{item.label}</Text>
+                    <Text style={styles.secondaryPortalSubtitle}>{item.subtitle}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
           </View>
 
-          {/* Form Card */}
-          <View style={[styles.card, { borderColor: activeRole.color, shadowColor: activeRole.color }]}>
-            <Text style={styles.cardTitle}>
-              {role === 'authority' ? 'Authority Access' : role === 'student' ? 'Student Portal' : 'Maintainer Portal'}
-            </Text>
-
-            {/* Login / Register Toggle */}
-            <View style={styles.tabContainer}>
-              <TouchableOpacity style={[styles.tabBtn, tab === 'login' && [styles.tabActive, { backgroundColor: activeRole.color }]]} onPress={() => setTab('login')}>
-                <Text style={[styles.tabText, tab === 'login' && styles.tabTextActive]}>Sign In</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.tabBtn, tab === 'register' && [styles.tabActive, { backgroundColor: activeRole.color }]]} onPress={() => setTab('register')}>
-                <Text style={[styles.tabText, tab === 'register' && styles.tabTextActive]}>Register</Text>
-              </TouchableOpacity>
-            </View>
-
-            {tab === 'register' ? (
-              <View style={styles.formSpace}>
-                <TextInput style={styles.input} placeholder="Full Name" placeholderTextColor={Colors.textMuted} value={form.name} onChangeText={v => updateForm('name', v)} />
-                {role === 'student' && <TextInput style={styles.input} placeholder="College ID" autoCapitalize="none" placeholderTextColor={Colors.textMuted} value={form.collegeId} onChangeText={v => updateForm('collegeId', v)} />}
-                <TextInput style={styles.input} placeholder="Phone Number" keyboardType="numeric" maxLength={10} placeholderTextColor={Colors.textMuted} value={form.phone} onChangeText={v => updateForm('phone', v)} />
-
-                {role === 'maintainer' && (
-                  <View style={styles.pickerSection}>
-                    <Text style={styles.pickerTitle}>Job Type:</Text>
-                    <View style={styles.chipRow}>
-                      {JOB_TYPES.map(j => (
-                        <TouchableOpacity key={j} style={[styles.chip, form.jobType === j && [styles.chipActive, { backgroundColor: activeRole.color, borderColor: activeRole.color }]]} onPress={() => updateForm('jobType', j)}>
-                          <Text style={[styles.chipText, form.jobType === j && styles.chipTextActive]}>{j}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {role === 'student' && (
-                  <View style={styles.pickerSection}>
-                    <Text style={styles.pickerTitle}>Gender:</Text>
-                    <View style={styles.chipRow}>
-                      {['Male', 'Female', 'Other'].map(g => (
-                        <TouchableOpacity key={g} style={[styles.chip, form.gender === g && [styles.chipActive, { backgroundColor: activeRole.color, borderColor: activeRole.color }]]} onPress={() => updateForm('gender', g)}>
-                          <Text style={[styles.chipText, form.gender === g && styles.chipTextActive]}>{g}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {role !== 'maintainer' && <TextInput style={styles.input} placeholder={role === 'student' ? "Valid @gmail.com" : "Email Address"} keyboardType="email-address" autoCapitalize="none" placeholderTextColor={Colors.textMuted} value={form.email} onChangeText={v => updateForm('email', v)} />}
-
-                {role === 'authority' && (
-                  <>
-                    <View style={styles.passwordRow}>
-                      <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Admin Secret Key" placeholderTextColor={Colors.textMuted} value={form.adminSecretKey} onChangeText={v => updateForm('adminSecretKey', v)} secureTextEntry={!showPassword} />
-                      <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                        <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={Colors.textMuted} />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.pickerSection}>
-                      <Text style={styles.pickerTitle}>Block / Building:</Text>
-                      <View style={styles.chipRow}>
-                        {BLOCKS.map(b => (
-                          <TouchableOpacity key={b} style={[styles.chip, form.block === b && [styles.chipActive, { backgroundColor: activeRole.color, borderColor: activeRole.color }]]} onPress={() => updateForm('block', b)}>
-                            <Text style={[styles.chipText, form.block === b && styles.chipTextActive]}>{b}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-
-                    <View style={styles.pickerSection}>
-                      <Text style={styles.pickerTitle}>Floors (Select Multiple):</Text>
-                      <View style={styles.chipRow}>
-                        {FLOORS.map(fl => (
-                          <TouchableOpacity key={fl} style={[styles.chip, form.floors.includes(fl) && [styles.chipActive, { backgroundColor: activeRole.color, borderColor: activeRole.color }]]} onPress={() => toggleArray('floors', fl)}>
-                            <Text style={[styles.chipText, form.floors.includes(fl) && styles.chipTextActive]}>{fl}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-
-                    <View style={styles.pickerSection}>
-                      <Text style={styles.pickerTitle}>Responsibilities:</Text>
-                      <View style={styles.chipRow}>
-                        {RESPONSIBILITIES.map(resp => (
-                          <TouchableOpacity key={resp} style={[styles.chip, form.responsibilities.includes(resp) && [styles.chipActive, { backgroundColor: activeRole.color, borderColor: activeRole.color }]]} onPress={() => toggleArray('responsibilities', resp)}>
-                            <Text style={[styles.chipText, form.responsibilities.includes(resp) && styles.chipTextActive]}>{resp}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-                  </>
-                )}
-
-                {role === 'student' && (
-                  <>
-                    <View style={styles.passwordRow}>
-                      <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Password" placeholderTextColor={Colors.textMuted} value={form.password} onChangeText={v => updateForm('password', v)} secureTextEntry={!showPassword} />
-                      <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                        <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={Colors.textMuted} />
-                      </TouchableOpacity>
-                    </View>
-                    <TextInput style={styles.input} placeholder="Confirm Password" placeholderTextColor={Colors.textMuted} value={form.confirmPassword} onChangeText={v => updateForm('confirmPassword', v)} secureTextEntry />
-                  </>
-                )}
-              </View>
-            ) : (
-              // LOGIN FORM
-              <View style={styles.formSpace}>
-                {role !== 'maintainer' && (
-                  <TextInput style={styles.input} placeholder={role === 'student' ? "Email or College ID" : "Email Address"} autoCapitalize="none" placeholderTextColor={Colors.textMuted} value={form.email} onChangeText={v => updateForm('email', v)} />
-                )}
-
-                {role === 'maintainer' && (
-                  <TextInput style={styles.input} placeholder="Registered Phone Number" keyboardType="numeric" maxLength={10} placeholderTextColor={Colors.textMuted} value={form.phone} onChangeText={v => updateForm('phone', v)} />
-                )}
-
-                {role === 'authority' && (
-                  <View style={styles.passwordRow}>
-                    <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Admin Secret Key" placeholderTextColor={Colors.textMuted} value={form.adminSecretKey} onChangeText={v => updateForm('adminSecretKey', v)} secureTextEntry={!showPassword} />
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                      <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={Colors.textMuted} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {role === 'student' && (
-                  <View style={styles.passwordRow}>
-                    <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Password" placeholderTextColor={Colors.textMuted} value={form.password} onChangeText={v => updateForm('password', v)} secureTextEntry={!showPassword} />
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                      <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={Colors.textMuted} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            )}
-
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: activeRole.color, shadowColor: activeRole.color }]} onPress={handleSubmit} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : (
-                <Text style={styles.submitText}>{tab === 'login' ? 'Continue Access ➔' : 'Create Account ➔'}</Text>
-              )}
-            </TouchableOpacity>
-
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Managed by Maharaja Surajmal Institute</Text>
           </View>
-          
-          {/* Branding */}
-          <View style={styles.branding}>
-            <Text style={styles.brandingText}>Managed by Maharaja Surajmal Institute</Text>
-            <Text style={styles.versionText}>v2.1.0 • Stable</Text>
-          </View>
-
-          <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={authSheetOpen} transparent animationType="fade" onRequestClose={() => setAuthSheetOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalKeyboard}>
+            <View
+              style={[
+                styles.authSheet,
+                tab === 'register' ? styles.authSheetLarge : styles.authSheetCompact,
+                role === 'authority' && tab === 'register' ? styles.authSheetAuthority : null,
+              ]}
+            >
+              <View style={styles.sheetHandle} />
+              <TouchableOpacity style={styles.sheetCloseButton} onPress={() => setAuthSheetOpen(false)}>
+                <Ionicons name="close" size={20} color={Colors.textMuted} />
+              </TouchableOpacity>
+              <View style={styles.sheetHeader}>
+                <View style={styles.sheetHeadingBadge}>
+                  <Ionicons name={activeRole.icon} size={15} color="#111827" />
+                  <Text style={styles.sheetHeadingBadgeText}>
+                    {tab === 'login' ? 'Portal Login' : 'Portal Registration'}
+                  </Text>
+                </View>
+                <Text style={styles.sheetTitle}>
+                  {role === 'student' ? 'Student Form' : role === 'authority' ? 'Authority Form' : 'Maintainer Form'}
+                </Text>
+                <Text style={styles.sheetSubtitle}>
+                  {tab === 'login'
+                    ? 'Login to continue.'
+                    : 'Create your account to continue.'}
+                </Text>
+              </View>
+
+              <ScrollView
+                style={styles.sheetScroll}
+                contentContainerStyle={styles.sheetScrollContent}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
+                automaticallyAdjustKeyboardInsets
+                bounces={false}
+              >
+                <View style={styles.tabContainer}>
+                  {['login', 'register'].map((tabKey) => {
+                    const selected = tab === tabKey;
+                    return (
+                      <TouchableOpacity
+                        key={tabKey}
+                        style={[
+                          styles.tabButton,
+                          selected && styles.tabButtonActive,
+                        ]}
+                        onPress={() => setTab(tabKey)}
+                        activeOpacity={0.9}
+                      >
+                        <Text style={[styles.tabButtonText, selected && styles.tabButtonTextActive]}>
+                          {tabKey === 'login' ? 'Sign In' : 'Register'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {tab === 'register' ? (
+                  <View style={styles.formBlock}>
+                    {renderField('Full Name', { placeholder: 'Full Name', value: form.name, onChangeText: (v) => updateForm('name', v) })}
+                    {role === 'student' &&
+                      renderField('College ID', {
+                        placeholder: 'College ID',
+                        value: form.collegeId,
+                        onChangeText: (v) => updateForm('collegeId', v),
+                        autoCapitalize: 'none',
+                      })}
+                    {renderField('Phone Number', {
+                      placeholder: 'Phone Number',
+                      value: form.phone,
+                      onChangeText: (v) => updateForm('phone', v),
+                      keyboardType: 'numeric',
+                      maxLength: 10,
+                    })}
+
+                    {role === 'maintainer' &&
+                      renderChipSelector('Work Category', JOB_TYPES, form.jobType, (item) => updateForm('jobType', item))}
+
+                    {role === 'student' &&
+                      renderChipSelector('Gender', ['Male', 'Female', 'Other'], form.gender, (item) => updateForm('gender', item))}
+
+                    {role !== 'maintainer' &&
+                      renderField(role === 'student' ? 'Gmail Address' : 'Email Address', {
+                        placeholder: role === 'student' ? 'Valid @gmail.com' : 'Email Address',
+                        value: form.email,
+                        onChangeText: (v) => updateForm('email', v),
+                        autoCapitalize: 'none',
+                        keyboardType: 'email-address',
+                      })}
+
+                    {role === 'authority' && (
+                      <>
+                        <View style={styles.fieldGroup}>
+                          <Text style={styles.fieldLabel}>Admin Secret Key</Text>
+                          <View style={styles.passwordWrap}>
+                            {renderInput({
+                              style: styles.passwordInput,
+                              placeholder: 'Admin Secret Key',
+                              value: form.adminSecretKey,
+                              onChangeText: (v) => updateForm('adminSecretKey', v),
+                              secureTextEntry: !showPassword,
+                            })}
+                            <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
+                              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+
+                        {renderChipSelector('Block / Building', BLOCKS, form.block, (item) => updateForm('block', item))}
+                        {renderChipSelector('Floors', FLOORS, form.floors, (item) => toggleArray('floors', item), true)}
+                        {renderChipSelector('Responsibilities', RESPONSIBILITIES, form.responsibilities, (item) => toggleArray('responsibilities', item), true)}
+                      </>
+                    )}
+
+                    {role === 'student' && (
+                      <>
+                        <View style={styles.fieldGroup}>
+                          <Text style={styles.fieldLabel}>Password</Text>
+                          <View style={styles.passwordWrap}>
+                            {renderInput({
+                              style: styles.passwordInput,
+                              placeholder: 'Password',
+                              value: form.password,
+                              onChangeText: (v) => updateForm('password', v),
+                              secureTextEntry: !showPassword,
+                            })}
+                            <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
+                              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                        {renderField('Confirm Password', {
+                          placeholder: 'Confirm Password',
+                          value: form.confirmPassword,
+                          onChangeText: (v) => updateForm('confirmPassword', v),
+                          secureTextEntry: true,
+                        })}
+                      </>
+                    )}
+                  </View>
+                ) : (
+                  <View style={styles.formBlock}>
+                    {role !== 'maintainer' &&
+                      renderField(role === 'student' ? 'Email or College ID' : 'Email Address', {
+                        placeholder: role === 'student' ? 'Email or College ID' : 'Email Address',
+                        value: form.email,
+                        onChangeText: (v) => updateForm('email', v),
+                        autoCapitalize: 'none',
+                      })}
+
+                    {role === 'maintainer' &&
+                      renderField('Phone Number', {
+                        placeholder: 'Registered Phone Number',
+                        value: form.phone,
+                        onChangeText: (v) => updateForm('phone', v),
+                        keyboardType: 'numeric',
+                        maxLength: 10,
+                      })}
+
+                    {role === 'authority' && (
+                      <View style={styles.fieldGroup}>
+                        <Text style={styles.fieldLabel}>Admin Secret Key</Text>
+                        <View style={styles.passwordWrap}>
+                          {renderInput({
+                            style: styles.passwordInput,
+                            placeholder: 'Admin Secret Key',
+                            value: form.adminSecretKey,
+                            onChangeText: (v) => updateForm('adminSecretKey', v),
+                            secureTextEntry: !showPassword,
+                          })}
+                          <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
+                            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+
+                    {role === 'student' && (
+                      <View style={styles.fieldGroup}>
+                        <Text style={styles.fieldLabel}>Password</Text>
+                        <View style={styles.passwordWrap}>
+                          {renderInput({
+                            style: styles.passwordInput,
+                            placeholder: 'Password',
+                            value: form.password,
+                            onChangeText: (v) => updateForm('password', v),
+                            secureTextEntry: !showPassword,
+                          })}
+                          <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
+                            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={handleSubmit}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>{tab === 'login' ? 'Continue' : 'Create Account'}</Text>
+                  )}
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fdfdfd' },
-  bubble: { position: 'absolute' },
-  container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 60 },
-  header: { alignItems: 'flex-start', marginBottom: 30, paddingLeft: 6 },
-  headerLogo: { width: 50, height: 50, borderRadius: 10, marginBottom: 16 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  logoDot: { width: 14, height: 14, borderRadius: 7 },
-  brand: { fontSize: 32, fontWeight: '900', color: '#1e293b', letterSpacing: -1 },
-  tagline: { fontSize: 15, color: '#64748b', fontWeight: '500' },
-  roleWrapper: { marginBottom: 20 },
-  roleRow: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 18, padding: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  roleBtn: { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, borderColor: 'transparent' },
-  roleBtnText: { fontSize: 11, fontWeight: '800', color: Colors.textMuted, marginTop: 4, letterSpacing: 0.5 },
-  card: { backgroundColor: '#fff', borderRadius: 24, padding: 24, paddingBottom: 32, borderWidth: 1, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8 },
-  cardTitle: { fontSize: 22, fontWeight: '900', color: Colors.text, marginBottom: 20, textAlign: 'center', letterSpacing: -0.5 },
-  tabContainer: { flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: 14, padding: 4, marginBottom: 24 },
-  tabBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10 },
-  tabActive: { shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 2 },
-  tabText: { fontSize: 13, fontWeight: '800', color: '#64748b', letterSpacing: 0.5 },
-  tabTextActive: { color: '#fff' },
-  formSpace: { marginBottom: 16 },
-  input: { backgroundColor: '#f8fafc', borderWidth: 1.5, borderColor: '#e2e8f0', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 16, fontSize: 15, color: Colors.text, marginBottom: 14, fontWeight: '600' },
-  passwordRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  eyeBtn: { padding: 14, position: 'absolute', right: 0 },
-  submitBtn: { padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 10, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 6 },
-  submitText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
-  pickerSection: { marginBottom: 18, marginTop: 4 },
-  pickerTitle: { fontSize: 11, fontWeight: '800', color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: '#e2e8f0', backgroundColor: '#f8fafc' },
-  chipActive: { },
-  chipText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
-  chipTextActive: { color: '#fff' },
-  branding: { marginTop: 40, alignItems: 'center', opacity: 0.5, paddingBottom: 20 },
-  brandingText: { fontSize: 11, fontWeight: '700', color: Colors.text, textTransform: 'uppercase', letterSpacing: 1 },
-  versionText: { fontSize: 10, color: Colors.textMuted, marginTop: 4 },
+  flex: { flex: 1 },
+  safe: { flex: 1, backgroundColor: '#ffffff' },
+  successSafe: { flex: 1, backgroundColor: '#ffffff' },
+  container: { paddingHorizontal: 24, paddingTop: 6, paddingBottom: 40 },
+  backgroundOrbTop: {
+    position: 'absolute',
+    top: -90,
+    left: -70,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'transparent',
+  },
+  backgroundOrbRight: {
+    position: 'absolute',
+    top: 160,
+    right: -90,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'transparent',
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 34,
+  },
+  brandLockup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flexShrink: 1,
+  },
+  brandLogoShell: {
+    width: 64,
+    height: 64,
+    borderRadius: 22,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5edf8',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  brandLogo: {
+    width: 49,
+    height: 49,
+    resizeMode: 'contain',
+  },
+  brandName: {
+    fontSize: 29,
+    fontWeight: '900',
+    color: '#111827',
+    letterSpacing: -1,
+  },
+  brandSub: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e6edf5',
+  },
+  hero: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
+  systemBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    marginBottom: 24,
+  },
+  systemDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  systemBadgeText: {
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    fontWeight: '800',
+    color: '#6b7280',
+  },
+  heroTitle: {
+    fontSize: 42,
+    lineHeight: 45,
+    fontWeight: '900',
+    textAlign: 'center',
+    color: '#171717',
+    letterSpacing: -2,
+    marginBottom: 16,
+  },
+  heroTitleAccent: {
+    fontStyle: 'italic',
+  },
+  heroText: {
+    fontSize: 15,
+    lineHeight: 25,
+    color: '#5b6473',
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  portalSection: {
+    marginBottom: 18,
+  },
+  primaryPortalCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 26,
+    padding: 22,
+    borderWidth: 1.5,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.06,
+    shadowRadius: 22,
+    elevation: 4,
+  },
+  portalCardActive: {
+    transform: [{ scale: 0.995 }],
+  },
+  portalLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  portalIconWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#eef2f7',
+  },
+  portalTitle: {
+    fontSize: 23,
+    fontWeight: '900',
+    color: '#1f2937',
+    letterSpacing: -0.8,
+  },
+  portalSubtitle: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  secondaryPortalRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  secondaryPortalCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    minHeight: 174,
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#eef2f7',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 3,
+  },
+  secondaryPortalTitle: {
+    marginTop: 20,
+    fontSize: 21,
+    fontWeight: '900',
+    color: '#1f2937',
+    letterSpacing: -0.8,
+  },
+  secondaryPortalSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  authSheet: {
+    width: '92%',
+    backgroundColor: '#ffffff',
+    borderRadius: 32,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 22,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.08,
+    shadowRadius: 32,
+    elevation: 6,
+  },
+  authSheetCompact: {
+    minHeight: '52%',
+    maxHeight: '68%',
+  },
+  authSheetLarge: {
+    minHeight: '68%',
+    maxHeight: '84%',
+  },
+  authSheetAuthority: {
+    minHeight: '76%',
+    maxHeight: '90%',
+  },
+  sheetHandle: {
+    width: 58,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: '#d1d5db',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  sheetCloseButton: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    zIndex: 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sheetHeadingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: '#f3f4f6',
+    marginBottom: 12,
+  },
+  sheetHeadingBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#4b5563',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  sheetKicker: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#6b7280',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1.1,
+  },
+  sheetTitle: {
+    fontSize: 30,
+    fontWeight: '900',
+    color: '#111827',
+    letterSpacing: -1.4,
+    textAlign: 'center',
+    marginBottom: 8,
+    width: '100%',
+  },
+  sheetSubtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#6b7280',
+    textAlign: 'center',
+    maxWidth: 290,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 18,
+    padding: 5,
+    marginBottom: 18,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: '#111111',
+    shadowColor: '#111111',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  tabButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#64748b',
+  },
+  tabButtonTextActive: {
+    color: '#ffffff',
+  },
+  formBlock: {
+    marginBottom: 4,
+    paddingBottom: 8,
+  },
+  fieldGroup: {
+    marginBottom: 14,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 8,
+    paddingLeft: 2,
+    letterSpacing: 0.2,
+  },
+  input: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#d1d5db',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 15,
+    color: Colors.text,
+    fontWeight: '600',
+  },
+  passwordWrap: {
+    position: 'relative',
+  },
+  passwordInput: {
+    marginBottom: 0,
+    paddingRight: 52,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectorSection: {
+    marginBottom: 16,
+  },
+  selectorTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  selectorHint: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 10,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  choiceChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+  },
+  choiceChipActive: {
+    backgroundColor: '#111111',
+    borderColor: '#111111',
+  },
+  choiceChipText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#4b5563',
+  },
+  choiceChipTextActive: {
+    color: '#ffffff',
+  },
+  primaryButton: {
+    marginTop: 12,
+    paddingVertical: 18,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111111',
+    shadowColor: '#111111',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 0.2,
+  },
+  footer: {
+    alignItems: 'center',
+    marginTop: 18,
+    paddingHorizontal: 12,
+    opacity: 0.72,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalKeyboard: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  sheetScroll: {
+    marginTop: 4,
+    width: '100%',
+  },
+  sheetScrollContent: {
+    paddingBottom: 28,
+  },
+  footerText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#475569',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    textAlign: 'center',
+  },
+  successWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+  },
+  successIconWrap: {
+    width: 120,
+    height: 120,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 30,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  successText: {
+    fontSize: 16,
+    lineHeight: 25,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 28,
+  },
 });
