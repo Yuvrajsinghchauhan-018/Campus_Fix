@@ -7,7 +7,7 @@ const { analyzeComplaint } = require('../utils/aiPriority');
 // @access  Private/Student
 exports.createComplaint = async (req, res) => {
   try {
-    const { title, description, locationType, roomNumber, block, floor } = req.body;
+    const { title, description, locationType, roomNumber, block, floor, computerNumber, mouseNumber, keyboardNumber, printerNumber } = req.body;
     let issues = req.body.issues || [];
     if (!Array.isArray(issues)) issues = [issues]; // Handle single string or undefined
     issues = issues.filter(Boolean); // Clean any empties
@@ -124,6 +124,10 @@ exports.createComplaint = async (req, res) => {
       roomNumber,
       block,
       floor,
+      computerNumber,
+      mouseNumber,
+      keyboardNumber,
+      printerNumber,
       photos,
       submittedBy: req.user.id,
       assignedAdmins,

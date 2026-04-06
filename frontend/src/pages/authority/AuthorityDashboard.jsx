@@ -12,7 +12,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-darkBorder hidden md:flex flex-col shrink-0 min-h-[calc(100vh-4rem)] sticky top-16">
+    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-darkBorder hidden md:flex flex-col shrink-0 h-[calc(100vh-4rem)] fixed left-0 top-16 z-30 overflow-y-auto custom-scrollbar">
       <div className="p-6">
         <h2 className="text-xl font-bold font-jakarta mb-8 text-slate-800 dark:text-white">Authority Panel</h2>
         <nav className="flex flex-col gap-2">
@@ -787,7 +787,7 @@ const AuthorityMain = () => {
   return (
     <div className="min-h-screen pt-16 bg-slate-50 dark:bg-slate-950 flex relative">
       <Sidebar />
-      <div className="flex-1 w-full max-w-full overflow-x-hidden">
+      <div className="flex-1 w-full max-w-full overflow-x-hidden md:ml-64">
         <Routes>
           <Route path="" element={<DashboardHome />} />
           <Route path="queue" element={<ComplaintsQueue />} />
