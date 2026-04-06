@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,13 +47,16 @@ export default function MaintainerDashboardScreen({ navigation }) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0]}! 🔧</Text>
-          <Text style={styles.subtitle}>Maintainer Dashboard</Text>
+        <View style={styles.headerTop}>
+          <Image source={require('../../../assets/msi_logo.png')} style={styles.logo} />
+          <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+            <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-          <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
-        </TouchableOpacity>
+        <View style={styles.headerBottom}>
+          <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0]}! 🔧</Text>
+          <Text style={styles.subtitle}>{user?.jobType || 'Maintainer'} • {user?.block || 'MSI'}</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -78,6 +81,20 @@ export default function MaintainerDashboardScreen({ navigation }) {
             <Text style={styles.badgeLabel}>{badge}</Text>
           </View>
         </View>
+
+        {/* Assigned Floors */}
+        {user?.floors && user.floors.length > 0 && (
+          <View style={styles.floorsCard}>
+            <Text style={styles.floorsTitle}>📍 Assigned Floors</Text>
+            <View style={styles.floorsGrid}>
+              {user.floors.map(f => (
+                <View key={f} style={styles.floorChip}>
+                  <Text style={styles.floorChipText}>{f}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Active Tasks */}
         <Text style={styles.sectionTitle}>My Task Queue</Text>
@@ -127,6 +144,12 @@ export default function MaintainerDashboardScreen({ navigation }) {
             </TouchableOpacity>
           ))
         )}
+
+        {/* Branding */}
+        <View style={styles.branding}>
+          <Text style={styles.brandingText}>Managed by Maharaja Surajmal Institute</Text>
+          <Text style={styles.versionText}>v2.1.0 • Field Op Edition</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -134,9 +157,12 @@ export default function MaintainerDashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.border },
-  welcome: { fontSize: 20, fontWeight: '800', color: Colors.text },
-  subtitle: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  header: { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.border },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  logo: { width: 40, height: 40, borderRadius: 8 },
+  headerBottom: {},
+  welcome: { fontSize: 22, fontWeight: '900', color: Colors.text, letterSpacing: -0.5 },
+  subtitle: { fontSize: 13, color: Colors.textMuted, marginTop: 2, fontWeight: '600' },
   logoutBtn: { padding: 8 },
   scroll: { padding: 16, paddingBottom: 40 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 22 },
@@ -156,4 +182,12 @@ const styles = StyleSheet.create({
   deadline: { fontSize: 12, color: Colors.danger, fontWeight: '600' },
   emptyCard: { backgroundColor: '#fff', borderRadius: 14, padding: 30, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: Colors.border },
   emptyText: { color: Colors.textMuted, fontSize: 14, textAlign: 'center' },
+  floorsCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
+  floorsTitle: { fontSize: 14, fontWeight: '800', color: Colors.text, marginBottom: 12 },
+  floorsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  floorChip: { backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' },
+  floorChipText: { fontSize: 12, fontWeight: '700', color: Colors.text },
+  branding: { marginTop: 40, alignItems: 'center', opacity: 0.5, paddingBottom: 20 },
+  brandingText: { fontSize: 11, fontWeight: '700', color: Colors.text, textTransform: 'uppercase', letterSpacing: 1 },
+  versionText: { fontSize: 10, color: Colors.textMuted, marginTop: 4 },
 });

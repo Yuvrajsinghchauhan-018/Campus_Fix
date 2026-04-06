@@ -12,9 +12,11 @@ import { Colors } from '../../theme/colors';
 const BLOCKS = ['MSI', 'MSIT', 'MBA'];
 const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Staff Room', 'Common Area'];
 
+const FLOORS = [1, 2, 3, 4, 5, 6, 7];
+
 const DYNAMIC_ISSUES = {
   Classroom: ['Projector', 'Fan', 'AC', 'Lights', 'Benches/Desks', 'Board'],
-  Lab: ['Computers', 'Keyboards', 'Mouse', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
+  Lab: ['Computers', 'Keyboards', 'Mouse', 'Printers', 'Projector', 'AC', 'Fans', 'Electrical Points', 'Desks'],
   Corridor: ['Lights', 'CCTV', 'Cleanliness', 'Electrical'],
   Washroom: ['Water Supply', 'Flush', 'Cleanliness', 'Broken Fixtures'],
   'Staff Room': ['AC', 'Furniture', 'Electrical', 'Internet'],
@@ -24,7 +26,8 @@ const DYNAMIC_ISSUES = {
 export default function NewComplaintScreen({ navigation }) {
   const [form, setForm] = useState({
     title: '', description: '',
-    locationType: 'Classroom', roomNumber: '', block: 'MSI', floor: '', issues: []
+    locationType: 'Classroom', roomNumber: '', block: 'MSI', floor: '1', issues: [],
+    computerNumber: '', mouseNumber: '', keyboardNumber: '', printerNumber: ''
   });
   const [photos, setPhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -147,8 +150,13 @@ export default function NewComplaintScreen({ navigation }) {
 
           {/* Floor */}
           <Label text="Floor" />
-          <TextInput style={styles.input} placeholder="e.g., 1" placeholderTextColor={Colors.textMuted}
-            value={form.floor} onChangeText={v => update('floor', v)} />
+          <View style={styles.chipRow}>
+            {FLOORS.map(f => (
+              <TouchableOpacity key={f} style={[styles.chip, form.floor === String(f) && styles.chipActive]} onPress={() => update('floor', String(f))}>
+                <Text style={[styles.chipText, form.floor === String(f) && styles.chipTextActive]}>Floor {f}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           {/* Location Type */}
           <Label text="Location Type" />
@@ -159,6 +167,11 @@ export default function NewComplaintScreen({ navigation }) {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Room / Lab Number */}
+          <Label text={form.locationType === 'Lab' ? 'Lab Number' : 'Room Number'} />
+          <TextInput style={styles.input} placeholder={form.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'}
+            placeholderTextColor={Colors.textMuted} value={form.roomNumber} onChangeText={v => update('roomNumber', v)} />
 
           {/* Dynamic Issues Based on Location */}
           {form.locationType && DYNAMIC_ISSUES[form.locationType] && (
@@ -177,10 +190,39 @@ export default function NewComplaintScreen({ navigation }) {
             </>
           )}
 
-          {/* Room Number */}
-          <Label text={form.locationType === 'Lab' ? 'Lab Number' : 'Room Number'} />
-          <TextInput style={styles.input} placeholder={form.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'}
-            placeholderTextColor={Colors.textMuted} value={form.roomNumber} onChangeText={v => update('roomNumber', v)} />
+          {/* Conditional Item Number Fields (Lab only) */}
+          {form.locationType === 'Lab' && (
+            <>
+              {form.issues.includes('Computers') && (
+                <>
+                  <Label text="Computer Number" />
+                  <TextInput style={styles.input} placeholder="e.g., PC-01" placeholderTextColor={Colors.textMuted}
+                    value={form.computerNumber} onChangeText={v => update('computerNumber', v)} />
+                </>
+              )}
+              {form.issues.includes('Keyboards') && (
+                <>
+                  <Label text="Keyboard Number" />
+                  <TextInput style={styles.input} placeholder="e.g., KB-01" placeholderTextColor={Colors.textMuted}
+                    value={form.keyboardNumber} onChangeText={v => update('keyboardNumber', v)} />
+                </>
+              )}
+              {form.issues.includes('Mouse') && (
+                <>
+                  <Label text="Mouse Number" />
+                  <TextInput style={styles.input} placeholder="e.g., M-01" placeholderTextColor={Colors.textMuted}
+                    value={form.mouseNumber} onChangeText={v => update('mouseNumber', v)} />
+                </>
+              )}
+              {form.issues.includes('Printers') && (
+                <>
+                  <Label text="Printer Number" />
+                  <TextInput style={styles.input} placeholder="e.g., PRN-01" placeholderTextColor={Colors.textMuted}
+                    value={form.printerNumber} onChangeText={v => update('printerNumber', v)} />
+                </>
+              )}
+            </>
+          )}
 
           {/* Photos */}
           <Label text={`Supporting Photos (${photos.length}/3)`} />
