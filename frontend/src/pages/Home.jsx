@@ -3,6 +3,7 @@ import { motion, useInView, useAnimation } from 'framer-motion';
 import { Shield, User, Wrench, ArrowRight, Zap, Camera, Clock, CheckCircle, Bell, QrCode, TrendingUp, Search, Star } from 'lucide-react';
 import AuthModal from '../components/common/AuthModal';
 import api from '../api/axios';
+import logo from '../assets/images/msi logo.png';
 
 const Counter = ({ to, suffix = "", duration = 2 }) => {
   const [count, setCount] = useState(0);
@@ -303,7 +304,7 @@ const Home = () => {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xl">C</div>
+              <img src={logo} alt="MSI Logo" className="w-10 h-10 object-contain" />
               <span className="font-jakarta font-bold text-xl text-white">CampusFix</span>
             </div>
             <p className="text-sm">Smart Campus, Seamless Maintenance.</p>

@@ -6,6 +6,7 @@ import { FileText, Users, AlertTriangle, CheckCircle, Download, Bell, QrCode, La
 import { format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
+import logo from '../../assets/images/msi logo.png';
 
 const Sidebar = () => {
   const { logout } = useAuth();
@@ -22,13 +23,7 @@ const Sidebar = () => {
            <Link to="/authority/queue" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/queue' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <AlertTriangle className="w-5 h-5" /> Complaints Queue
            </Link>
-           <Link to="/authority/approvals" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/approvals' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-              <Users className="w-5 h-5" /> Maintainer Approvals
-           </Link>
-            <Link to="/authority/add-maintainer" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/add-maintainer' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-               <UserPlus className="w-5 h-5" /> Add Maintainer
-            </Link>
-            <Link to="/authority/manage-maintainers" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/manage-maintainers' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+            <Link to="/authority/manage-maintainers" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname.startsWith('/authority/manage-maintainers') || location.pathname.startsWith('/authority/add-maintainer') || location.pathname.startsWith('/authority/approvals') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                <Users className="w-5 h-5" /> Manage Maintainers
             </Link>
             <Link to="/authority/reports" className={`p-3 rounded-lg flex items-center gap-3 font-medium transition-colors ${location.pathname === '/authority/reports' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -40,6 +35,10 @@ const Sidebar = () => {
         </nav>
       </div>
       <div className="mt-auto p-6 border-t border-slate-200 dark:border-darkBorder">
+         <div className="flex flex-col items-center gap-4 mb-6 group">
+            <img src={logo} alt="MSI Logo" className="w-32 h-auto transition-all duration-300 group-hover:scale-110" />
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 dark:text-slate-500 text-center">Managed by MSI</p>
+         </div>
          <button onClick={logout} className="p-3 w-full rounded-lg flex items-center gap-3 font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <LogOut className="w-5 h-5" /> Logout
          </button>
@@ -50,6 +49,7 @@ const Sidebar = () => {
 
 // 1. Dashboard Home (Stats & Charts)
 const DashboardHome = () => {
+  const { user } = useAuth();
   const [summary, setSummary] = useState(null);
   const [catData, setCatData] = useState([]);
   const [refresh, setRefresh] = useState(0);
@@ -78,7 +78,7 @@ const DashboardHome = () => {
     <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-jakarta font-bold text-slate-800 dark:text-white mb-2">Authority Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-jakarta font-bold text-slate-800 dark:text-white mb-2">Welcome, {user?.name || 'Authority'}</h1>
           <p className="text-slate-500 dark:text-slate-400">Holistic overview of campus maintenance health.</p>
         </div>
       </div>
@@ -679,14 +679,19 @@ const ManageMaintainers = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in relative">
-            <div className="flex justify-between items-center mb-8 border-b border-slate-200 dark:border-darkBorder pb-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 dark:border-darkBorder pb-6 gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">Manage Maintainers</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">View and permanently remove maintainer accounts assigned to your role.</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">View, approve, or provision maintainer accounts.</p>
                 </div>
-                <Link to="/authority/add-maintainer" className="btn-primary py-2 px-6 flex items-center gap-2">
-                    <UserPlus className="w-4 h-4"/> Add New
-                </Link>
+                <div className="flex gap-3 w-full md:w-auto">
+                    <Link to="/authority/approvals" className="flex-1 md:flex-none py-2.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <Users className="w-4 h-4 text-blue-500"/> Review Approvals
+                    </Link>
+                    <Link to="/authority/add-maintainer" className="flex-1 md:flex-none btn-primary py-2.5 px-6 text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
+                        <UserPlus className="w-4 h-4"/> Add New
+                    </Link>
+                </div>
             </div>
 
             {loading ? (

@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
+import logo from '../../assets/images/msi logo.png';
 
 // Mock components to be replaced
 import NewComplaint from './NewComplaint';
@@ -34,6 +35,10 @@ const Sidebar = () => {
         </nav>
       </div>
       <div className="mt-auto p-6 border-t border-slate-200 dark:border-darkBorder">
+         <div className="flex flex-col items-center gap-4 mb-6 group">
+            <img src={logo} alt="MSI Logo" className="w-32 h-auto transition-all duration-300 group-hover:scale-110" />
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 dark:text-slate-500 text-center">Managed by MSI</p>
+         </div>
          <button onClick={logout} className="p-3 w-full rounded-lg flex items-center gap-3 font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <LogOut className="w-5 h-5" /> Logout
          </button>
