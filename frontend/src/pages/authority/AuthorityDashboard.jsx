@@ -404,7 +404,7 @@ const ComplaintsQueue = () => {
 
                         {viewingComp.status === 'Pending' && (
                             <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                                <button onClick={()=>{setSelectedComp(viewingComp); setViewingComp(null);}} className="btn-primary py-3.5 px-8 font-bold shadow-xl shadow-blue-500/20 w-full md:w-auto">Assign Resources Automatically</button>
+                                <button onClick={()=>{setSelectedComp(viewingComp); setViewingComp(null);}} className="btn-primary py-3.5 px-8 font-bold shadow-xl shadow-blue-500/20 w-full md:w-auto">Assign Resources</button>
                             </div>
                         )}
                         {viewingComp.status !== 'Pending' && viewingComp.assignedMaintainer && (
