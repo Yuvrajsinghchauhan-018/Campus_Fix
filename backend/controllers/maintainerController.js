@@ -106,7 +106,7 @@ exports.getApprovedMaintainers = async (req, res) => {
           'Plumbing': ['Plumber'],
           'IT Systems': ['IT Technician'],
           'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'],
-          'Lab Management': ['Electrician', 'Plumber', 'IT Technician', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'] // Labs might need any
+          'Lab Management': ['IT Technician', 'Electrician', 'Carpenter']
         };
         
         let allowedTypes = [];

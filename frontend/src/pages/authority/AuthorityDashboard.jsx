@@ -272,9 +272,17 @@ const ComplaintsQueue = () => {
                                     <option value="">-- Choose --</option>
                                     {maintainers
                                         .filter(m => {
-                                            if(selectedComp.categories?.includes('Electrical') && m.jobType === 'Electrician') return true;
-                                            if(selectedComp.categories?.includes('Plumbing') && m.jobType === 'Plumber') return true;
-                                            return true;
+                                            const categoryToMaintainer = {
+                                                'Electrical': ['Electrician'],
+                                                'Plumbing': ['Plumber'],
+                                                'IT Systems': ['IT Technician'],
+                                                'Lab Management': ['IT Technician', 'Electrician', 'Carpenter'],
+                                                'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
+                                            };
+                                            // Show maintainers whose jobType matches at least one category of the complaint
+                                            return selectedComp.categories?.some(cat => 
+                                                categoryToMaintainer[cat]?.includes(m.jobType)
+                                            ) || false;
                                         })
                                         .map(m => (
                                         <option key={m._id} value={m._id}>{m.name} ({m.jobType}) - Score: {m.performanceScore}</option>
