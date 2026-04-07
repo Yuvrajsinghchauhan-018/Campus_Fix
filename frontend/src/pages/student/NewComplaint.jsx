@@ -5,6 +5,7 @@ import { Sparkles, UploadCloud, X, Loader2, CheckCircle, AlertTriangle, FileText
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Staff Room', 'Common Area'];
+const BLOCKS = ['MSI', 'MSIT', 'MBA', 'Law'];
 
 const DYNAMIC_ISSUES = {
   Classroom: ['Projector', 'Fan', 'AC', 'Lights', 'Benches/Desks', 'Board'],
@@ -15,6 +16,8 @@ const DYNAMIC_ISSUES = {
   'Common Area': ['Lights', 'Cleanliness', 'Furniture']
 };
 const LAB_COMPUTER_RELATED_ISSUES = ['Computers', 'Keyboards', 'Mouse'];
+const getRoomOptions = (floor) =>
+  Array.from({ length: 10 }, (_, index) => `${floor}${String(index + 1).padStart(2, '0')}`);
 
 const NewComplaint = () => {
   const navigate = useNavigate();
@@ -32,7 +35,9 @@ const NewComplaint = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'locationType') {
-      setFormData({ ...formData, locationType: value, issues: [] });
+      setFormData({ ...formData, locationType: value, issues: [], roomNumber: '' });
+    } else if (name === 'floor') {
+      setFormData({ ...formData, floor: value, roomNumber: '' });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -153,9 +158,7 @@ const NewComplaint = () => {
                         <MapPin className="h-5 w-5 text-slate-400" />
                      </div>
                      <select name="block" value={formData.block} onChange={handleChange} className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800 appearance-none cursor-pointer">
-                       <option value="MSI">MSI</option>
-                       <option value="MSIT">MSIT</option>
-                       <option value="MBA">MBA</option>
+                       {BLOCKS.map(block => <option key={block} value={block}>{block}</option>)}
                      </select>
                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -197,12 +200,42 @@ const NewComplaint = () => {
                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
                      {formData.locationType === 'Lab' ? 'Lab Number' : 'Room Number'}
                    </label>
-                   <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                         <DoorOpen className="h-5 w-5 text-slate-400 transition-all" />
-                      </div>
-                      <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:placeholder-slate-500 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder={formData.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'} />
-                   </div>
+                   {formData.locationType === 'Classroom' ? (
+                     <>
+                       <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                             <DoorOpen className="h-5 w-5 text-slate-400 transition-all" />
+                          </div>
+                          <select
+                            name="roomNumber"
+                            value={formData.roomNumber}
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800 appearance-none cursor-pointer"
+                          >
+                            <option value="">Select room number</option>
+                            {getRoomOptions(formData.floor).map(room => (
+                              <option key={room} value={room}>
+                                {room}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
+                       </div>
+                       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                         Floor {formData.floor} rooms are available from {getRoomOptions(formData.floor)[0]} to {getRoomOptions(formData.floor).slice(-1)[0]}.
+                       </p>
+                     </>
+                   ) : (
+                     <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                           <DoorOpen className="h-5 w-5 text-slate-400 transition-all" />
+                        </div>
+                        <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange} required className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:placeholder-slate-500 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800" placeholder={formData.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'} />
+                     </div>
+                   )}
                 </div>
 
                 {formData.locationType && DYNAMIC_ISSUES[formData.locationType] && (

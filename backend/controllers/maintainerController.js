@@ -102,11 +102,8 @@ exports.getApprovedMaintainers = async (req, res) => {
       if (admin && admin.responsibilities && admin.responsibilities.length > 0) {
         // Map admin responsibilities to maintainer job types
         const typeMap = {
-          'Electrical': ['Electrician'],
-          'Plumbing': ['Plumber'],
-          'IT Systems': ['Lab Technician', 'Printer Repair'],
-          'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'Printer Repair'],
-          'Lab Management': ['Lab Technician', 'Printer Repair', 'Electrician', 'MTS', 'AMC', 'Peon']
+          'Lab Management': ['MTS', 'AMC', 'Peon', 'Electrician', 'Printer Repair', 'Lab Technician'],
+          'Infrastructure': ['Electrician', 'Plumber', 'Lab Technician', 'Printer Repair', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
         };
         
         let allowedTypes = [];

@@ -48,7 +48,7 @@ const UserSchema = new mongoose.Schema({
   },
   responsibilities: [{
     type: String,
-    enum: ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure']
+    enum: ['Lab Management', 'Infrastructure']
   }],
   profilePhoto: { type: String },
   availability: {

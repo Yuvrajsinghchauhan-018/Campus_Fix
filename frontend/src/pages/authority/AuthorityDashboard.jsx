@@ -273,11 +273,8 @@ const ComplaintsQueue = () => {
                                     {maintainers
                                         .filter(m => {
                                             const categoryToMaintainer = {
-                                                'Electrical': ['Electrician'],
-                                                'Plumbing': ['Plumber'],
-                                                'IT Systems': ['Lab Technician', 'Printer Repair'],
-                                                'Lab Management': ['Lab Technician', 'Printer Repair', 'Electrician', 'MTS', 'AMC', 'Peon'],
-                                                'Infrastructure': ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'Printer Repair']
+                                                'Lab Management': ['MTS', 'AMC', 'Peon', 'Electrician', 'Printer Repair', 'Lab Technician'],
+                                                'Infrastructure': ['Electrician', 'Plumber', 'Lab Technician', 'Printer Repair', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper']
                                             };
                                             // Show maintainers whose jobType matches at least one category of the complaint
                                             return selectedComp.categories?.some(cat => 
@@ -411,7 +408,7 @@ const ComplaintsQueue = () => {
                             <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
                                 <div className="card p-4 border border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Allocated Technician</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Assigned Lab Technician</p>
                                         <p className="font-bold text-slate-800 dark:text-white">{viewingComp.assignedMaintainer.name}</p>
                                     </div>
                                     <div className="text-right">
