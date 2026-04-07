@@ -22,6 +22,9 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       }
     },
+    "extra": {
+      "apiBaseUrl": ""
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     }

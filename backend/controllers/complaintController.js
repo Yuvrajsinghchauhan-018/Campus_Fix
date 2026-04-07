@@ -28,37 +28,10 @@ exports.createComplaint = async (req, res) => {
       });
     }
 
-    // Dynamic Validation and Mapping of AI Arrays
-    let rawCategories = (aiResult && aiResult.categories && Array.isArray(aiResult.categories)) ? aiResult.categories : [];
-    
-    // Explicit Overrides
-    if (locationType === 'Lab') rawCategories.push('Lab Management');
-    
-    // Intelligent Keyword Fallbacks to guarantee exact routing bounds
-    const combinedText = `${title} ${description}`.toLowerCase();
-    
-    if (combinedText.includes('lab')) {
-      rawCategories.push('Lab Management');
-    }
-    if (combinedText.includes('projector') || combinedText.includes('computer') || combinedText.includes('system') || combinedText.includes('network') || combinedText.includes('internet') || combinedText.includes('wifi')) {
-      rawCategories.push('IT Systems');
-    }
-    if (combinedText.includes('ac') || combinedText.includes('fan') || combinedText.includes('bench') || combinedText.includes('wall') || combinedText.includes('infrastructure') || combinedText.includes('door') || combinedText.includes('window')) {
-      rawCategories.push('Infrastructure');
-    }
-    if (combinedText.includes('wire') || combinedText.includes('spark') || combinedText.includes('switch') || combinedText.includes('electrical') || combinedText.includes('light')) {
-      rawCategories.push('Electrical');
-    }
-    if (combinedText.includes('water') || combinedText.includes('leak') || combinedText.includes('pipe') || combinedText.includes('plumbing') || combinedText.includes('tap') || combinedText.includes('sink')) {
-      rawCategories.push('Plumbing');
-    }
-
-    // Clean, Verify, Deduplicate, Slice
-    const validEnums = ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure'];
-    let finalCategories = [...new Set(rawCategories.filter(c => validEnums.includes(c)))].slice(0, 3);
-    
-    // Strict Global Fallback
-    if (finalCategories.length === 0) finalCategories = ['Infrastructure'];
+    // Simplified routing model:
+    // Lab complaints always go to Lab Management.
+    // Every non-lab complaint goes to Infrastructure.
+    let finalCategories = locationType === 'Lab' ? ['Lab Management'] : ['Infrastructure'];
 
     const formatPriority = (p) => {
         if (!p) return 'Low';

@@ -50,7 +50,7 @@ const ROLES = [
 
 const JOB_TYPES = ['Electrician', 'Plumber', 'Lab Technician', 'Printer Repair', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'MTS', 'AMC', 'Peon'];
 const FLOORS = ['Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6'];
-const RESPONSIBILITIES = ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure'];
+const RESPONSIBILITIES = ['Lab Management', 'Infrastructure'];
 const BLOCKS = ['MSI', 'MSIT', 'MBA'];
 
 export default function LoginScreen() {
@@ -258,9 +258,6 @@ export default function LoginScreen() {
                 <Text style={styles.brandName}>CampusFix</Text>
                 <Text style={styles.brandSub}>Maharaja Surajmal Institute</Text>
               </View>
-            </View>
-            <View style={styles.menuButton}>
-              <Ionicons name="grid-outline" size={20} color={Colors.text} />
             </View>
           </View>
 
@@ -573,7 +570,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     marginBottom: 34,
   },
   brandLockup: {
@@ -612,16 +609,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748b',
     marginTop: 2,
-  },
-  menuButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e6edf5',
   },
   hero: {
     marginBottom: 30,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
-  Image, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
+  Image, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +9,12 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../../api/axios';
 import { Colors } from '../../theme/colors';
 
-const BLOCKS = ['MSI', 'MSIT', 'MBA'];
+const BLOCKS = ['MSI', 'MSIT', 'MBA', 'Law'];
 const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Staff Room', 'Common Area'];
 
 const FLOORS = [1, 2, 3, 4, 5, 6, 7];
+const getRoomOptions = (floor) =>
+  Array.from({ length: 10 }, (_, index) => `${floor}${String(index + 1).padStart(2, '0')}`);
 
 const DYNAMIC_ISSUES = {
   Classroom: ['Projector', 'Fan', 'AC', 'Lights', 'Benches/Desks', 'Board'],
@@ -33,10 +35,13 @@ export default function NewComplaintScreen({ navigation }) {
   const [photos, setPhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [roomPickerOpen, setRoomPickerOpen] = useState(false);
 
   const update = (key, val) => {
     if (key === 'locationType') {
-      setForm(f => ({ ...f, locationType: val, issues: [] }));
+      setForm(f => ({ ...f, locationType: val, issues: [], roomNumber: '' }));
+    } else if (key === 'floor') {
+      setForm(f => ({ ...f, floor: val, roomNumber: '' }));
     } else {
       setForm(f => ({ ...f, [key]: val }));
     }
@@ -176,8 +181,25 @@ export default function NewComplaintScreen({ navigation }) {
 
           {/* Room / Lab Number */}
           <Label text={form.locationType === 'Lab' ? 'Lab Number' : 'Room Number'} />
-          <TextInput style={styles.input} placeholder={form.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'}
-            placeholderTextColor={Colors.textMuted} value={form.roomNumber} onChangeText={v => update('roomNumber', v)} />
+          {form.locationType === 'Classroom' ? (
+            <TouchableOpacity style={styles.selectorCard} onPress={() => setRoomPickerOpen(true)} activeOpacity={0.9}>
+              <View style={styles.selectorIconWrap}>
+                <Ionicons name="business-outline" size={20} color={Colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.selectorLabel}>
+                  {form.roomNumber || 'Select room number'}
+                </Text>
+                <Text style={styles.selectorHint}>
+                  Floor {form.floor}: {getRoomOptions(form.floor)[0]} to {getRoomOptions(form.floor).slice(-1)[0]}
+                </Text>
+              </View>
+              <Ionicons name="chevron-down" size={20} color={Colors.textMuted} />
+            </TouchableOpacity>
+          ) : (
+            <TextInput style={styles.input} placeholder={form.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'}
+              placeholderTextColor={Colors.textMuted} value={form.roomNumber} onChangeText={v => update('roomNumber', v)} />
+          )}
 
           {/* Dynamic Issues Based on Location */}
           {form.locationType && DYNAMIC_ISSUES[form.locationType] && (
@@ -253,6 +275,43 @@ export default function NewComplaintScreen({ navigation }) {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={roomPickerOpen && form.locationType === 'Classroom'} transparent animationType="fade" onRequestClose={() => setRoomPickerOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.roomSheet}>
+            <View style={styles.roomSheetHeader}>
+              <View>
+                <Text style={styles.roomSheetTitle}>Select Room Number</Text>
+                <Text style={styles.roomSheetSubtitle}>
+                  Floor {form.floor} options: {getRoomOptions(form.floor)[0]} to {getRoomOptions(form.floor).slice(-1)[0]}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.roomSheetClose} onPress={() => setRoomPickerOpen(false)}>
+                <Ionicons name="close" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.roomGrid}>
+              {getRoomOptions(form.floor).map((room) => {
+                const selected = form.roomNumber === room;
+                return (
+                  <TouchableOpacity
+                    key={room}
+                    style={[styles.roomOption, selected && styles.roomOptionActive]}
+                    onPress={() => {
+                      update('roomNumber', room);
+                      setRoomPickerOpen(false);
+                    }}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={[styles.roomOptionText, selected && styles.roomOptionTextActive]}>{room}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -270,6 +329,10 @@ const styles = StyleSheet.create({
   errorText: { color: Colors.danger, fontSize: 13, flex: 1 },
   label: { fontSize: 13, fontWeight: '700', color: Colors.text, marginBottom: 8, marginTop: 14 },
   input: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: Colors.border, borderRadius: 12, padding: 14, fontSize: 15, color: Colors.text },
+  selectorCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', borderWidth: 1.5, borderColor: Colors.border, borderRadius: 16, padding: 14 },
+  selectorIconWrap: { width: 42, height: 42, borderRadius: 14, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  selectorLabel: { fontSize: 15, fontWeight: '800', color: Colors.text, marginBottom: 2 },
+  selectorHint: { fontSize: 12, color: Colors.textMuted },
   textarea: { height: 110, textAlignVertical: 'top' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: '#fff' },
@@ -287,4 +350,15 @@ const styles = StyleSheet.create({
   removePhoto: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 10, padding: 3 },
   submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: Colors.primary, padding: 18, borderRadius: 16, marginTop: 24 },
   submitText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.22)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  roomSheet: { width: '100%', maxWidth: 420, backgroundColor: '#fff', borderRadius: 28, padding: 20, borderWidth: 1, borderColor: Colors.border },
+  roomSheetHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginBottom: 18 },
+  roomSheetTitle: { fontSize: 20, fontWeight: '900', color: Colors.text, marginBottom: 4 },
+  roomSheetSubtitle: { fontSize: 13, color: Colors.textMuted, lineHeight: 18 },
+  roomSheetClose: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' },
+  roomGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  roomOption: { width: '31%', minWidth: 86, paddingVertical: 14, borderRadius: 16, borderWidth: 1.5, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  roomOptionActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  roomOptionText: { fontSize: 15, fontWeight: '800', color: Colors.text },
+  roomOptionTextActive: { color: '#fff' },
 });

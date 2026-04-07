@@ -5,7 +5,7 @@ const ComplaintSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   categories: [{ 
     type: String, 
-    enum: ['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure']
+    enum: ['Lab Management', 'Infrastructure']
   }],
   issues: [{ type: String }],
   priority: { 
@@ -28,7 +28,7 @@ const ComplaintSchema = new mongoose.Schema({
     default: 'Classroom'
   },
   roomNumber: { type: String, required: true },
-  block: { type: String, enum: ['MSI', 'MSIT', 'MBA'], required: true },
+  block: { type: String, enum: ['MSI', 'MSIT', 'MBA', 'Law'], required: true },
   floor: { type: String, required: true },
   computerNumber: { type: String },
   mouseNumber: { type: String },

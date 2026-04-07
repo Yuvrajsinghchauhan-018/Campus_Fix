@@ -23,11 +23,8 @@ const SLA_PRESETS = [
   { label: '1 Week', hours: 168 },
 ];
 const categoryToMaintainer = {
-  Electrical: ['Electrician'],
-  Plumbing: ['Plumber'],
-  'IT Systems': ['Lab Technician', 'Printer Repair'],
-  'Lab Management': ['Lab Technician', 'Printer Repair', 'Electrician', 'MTS', 'AMC', 'Peon'],
-  Infrastructure: ['AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper', 'Printer Repair'],
+  'Lab Management': ['MTS', 'AMC', 'Peon', 'Electrician', 'Printer Repair', 'Lab Technician'],
+  Infrastructure: ['Electrician', 'Plumber', 'Lab Technician', 'Printer Repair', 'AC Mechanic', 'Carpenter', 'Painter', 'Civil Worker', 'Sweeper'],
 };
 
 const getImageUrl = (url) => url?.startsWith('/uploads/') ? `${STATIC_BASE_URL}${url}` : url;
@@ -276,7 +273,7 @@ export default function ComplaintsQueueScreen({ navigation }) {
               {/* Assigned Maintainer (if any) */}
               {viewingComp?.assignedMaintainer && (
                 <View style={styles.techCard}>
-                  <Text style={styles.sectionLabel}>👷 Allocated Technician</Text>
+                  <Text style={styles.sectionLabel}>👷 Assigned Lab Technician</Text>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Text style={{ fontWeight: '700', color: Colors.text }}>{viewingComp.assignedMaintainer.name}</Text>
                     <Text style={{ color: Colors.primary, fontWeight: '700' }}>{viewingComp.assignedMaintainer.jobType}</Text>

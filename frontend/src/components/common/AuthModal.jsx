@@ -287,7 +287,7 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                           {[
                             'Electrician',
                             'Plumber',
-                            'IT Technician',
+                            'Lab Technician',
                             'Printer Repair',
                             'AC Mechanic',
                             'Carpenter',
@@ -359,7 +359,7 @@ const AuthModal = ({ isOpen, onClose, role }) => {
                         <div className="space-y-2 md:col-span-2 mt-2">
                           <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">Responsibilities</label>
                           <div className="flex flex-wrap gap-2">
-                            {['Electrical', 'Plumbing', 'Lab Management', 'IT Systems', 'Infrastructure'].map((resp) => (
+                            {['Lab Management', 'Infrastructure'].map((resp) => (
                               <button
                                 type="button"
                                 key={resp}
