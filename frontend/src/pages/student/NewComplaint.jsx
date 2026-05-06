@@ -18,6 +18,7 @@ const DYNAMIC_ISSUES = {
 const LAB_COMPUTER_RELATED_ISSUES = ['Computers', 'Keyboards', 'Mouse'];
 const getRoomOptions = (floor) =>
   Array.from({ length: 10 }, (_, index) => `${floor}${String(index + 1).padStart(2, '0')}`);
+const LAB_OPTIONS = Array.from({ length: 8 }, (_, index) => `Lab ${index + 1}`);
 
 const NewComplaint = () => {
   const navigate = useNavigate();
@@ -226,6 +227,34 @@ const NewComplaint = () => {
                        </div>
                        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                          Floor {formData.floor} rooms are available from {getRoomOptions(formData.floor)[0]} to {getRoomOptions(formData.floor).slice(-1)[0]}.
+                       </p>
+                     </>
+                   ) : formData.locationType === 'Lab' ? (
+                     <>
+                       <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                             <DoorOpen className="h-5 w-5 text-slate-400 transition-all" />
+                          </div>
+                          <select
+                            name="roomNumber"
+                            value={formData.roomNumber}
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-slate-50 border-transparent text-slate-800 text-base rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block pl-12 p-3.5 dark:bg-slate-800/50 dark:text-white dark:focus:ring-blue-500 shadow-inner transition-all hover:bg-slate-100 dark:hover:bg-slate-800 appearance-none cursor-pointer"
+                          >
+                            <option value="">Select lab number</option>
+                            {LAB_OPTIONS.map(lab => (
+                              <option key={lab} value={lab}>
+                                {lab}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
+                       </div>
+                       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                         Choose the lab where the issue is located, from Lab 1 to Lab 8.
                        </p>
                      </>
                    ) : (

@@ -15,6 +15,7 @@ const LOCATION_TYPES = ['Classroom', 'Lab', 'Corridor', 'Washroom', 'Staff Room'
 const FLOORS = [1, 2, 3, 4, 5, 6, 7];
 const getRoomOptions = (floor) =>
   Array.from({ length: 10 }, (_, index) => `${floor}${String(index + 1).padStart(2, '0')}`);
+const LAB_OPTIONS = Array.from({ length: 8 }, (_, index) => `Lab ${index + 1}`);
 
 const DYNAMIC_ISSUES = {
   Classroom: ['Projector', 'Fan', 'AC', 'Lights', 'Benches/Desks', 'Board'],
@@ -196,6 +197,21 @@ export default function NewComplaintScreen({ navigation }) {
               </View>
               <Ionicons name="chevron-down" size={20} color={Colors.textMuted} />
             </TouchableOpacity>
+          ) : form.locationType === 'Lab' ? (
+            <TouchableOpacity style={styles.selectorCard} onPress={() => setRoomPickerOpen(true)} activeOpacity={0.9}>
+              <View style={styles.selectorIconWrap}>
+                <Ionicons name="desktop-outline" size={20} color={Colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.selectorLabel}>
+                  {form.roomNumber || 'Select lab number'}
+                </Text>
+                <Text style={styles.selectorHint}>
+                  Choose the lab where the issue is located, from Lab 1 to Lab 8
+                </Text>
+              </View>
+              <Ionicons name="chevron-down" size={20} color={Colors.textMuted} />
+            </TouchableOpacity>
           ) : (
             <TextInput style={styles.input} placeholder={form.locationType === 'Lab' ? 'e.g., Computer Lab 2' : 'e.g., 101'}
               placeholderTextColor={Colors.textMuted} value={form.roomNumber} onChangeText={v => update('roomNumber', v)} />
@@ -276,14 +292,16 @@ export default function NewComplaintScreen({ navigation }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal visible={roomPickerOpen && form.locationType === 'Classroom'} transparent animationType="fade" onRequestClose={() => setRoomPickerOpen(false)}>
+      <Modal visible={roomPickerOpen && (form.locationType === 'Classroom' || form.locationType === 'Lab')} transparent animationType="fade" onRequestClose={() => setRoomPickerOpen(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.roomSheet}>
             <View style={styles.roomSheetHeader}>
               <View>
-                <Text style={styles.roomSheetTitle}>Select Room Number</Text>
+                <Text style={styles.roomSheetTitle}>{form.locationType === 'Lab' ? 'Select Lab Number' : 'Select Room Number'}</Text>
                 <Text style={styles.roomSheetSubtitle}>
-                  Floor {form.floor} options: {getRoomOptions(form.floor)[0]} to {getRoomOptions(form.floor).slice(-1)[0]}
+                  {form.locationType === 'Lab'
+                    ? 'Available options: Lab 1 to Lab 8'
+                    : `Floor ${form.floor} options: ${getRoomOptions(form.floor)[0]} to ${getRoomOptions(form.floor).slice(-1)[0]}`}
                 </Text>
               </View>
               <TouchableOpacity style={styles.roomSheetClose} onPress={() => setRoomPickerOpen(false)}>
@@ -292,19 +310,19 @@ export default function NewComplaintScreen({ navigation }) {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.roomGrid}>
-              {getRoomOptions(form.floor).map((room) => {
-                const selected = form.roomNumber === room;
+              {(form.locationType === 'Lab' ? LAB_OPTIONS : getRoomOptions(form.floor)).map((option) => {
+                const selected = form.roomNumber === option;
                 return (
                   <TouchableOpacity
-                    key={room}
+                    key={option}
                     style={[styles.roomOption, selected && styles.roomOptionActive]}
                     onPress={() => {
-                      update('roomNumber', room);
+                      update('roomNumber', option);
                       setRoomPickerOpen(false);
                     }}
                     activeOpacity={0.9}
                   >
-                    <Text style={[styles.roomOptionText, selected && styles.roomOptionTextActive]}>{room}</Text>
+                    <Text style={[styles.roomOptionText, selected && styles.roomOptionTextActive]}>{option}</Text>
                   </TouchableOpacity>
                 );
               })}
