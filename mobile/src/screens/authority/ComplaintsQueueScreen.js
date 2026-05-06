@@ -179,6 +179,12 @@ export default function ComplaintsQueueScreen({ navigation }) {
               <Text style={styles.cardDesc} numberOfLines={2}>{c.description}</Text>
               <Text style={styles.cardLocation}>📍 {[c.block, c.floor && `Floor ${c.floor}`, c.roomNumber].filter(Boolean).join(' · ')}</Text>
               {c.submittedBy && <Text style={styles.cardBy}>👤 {c.submittedBy.name}</Text>}
+              {c.submittedBy?.email && (
+                <View style={styles.emailPill}>
+                  <Ionicons name="mail-outline" size={13} color={Colors.primary} />
+                  <Text style={styles.emailPillText} numberOfLines={1}>{c.submittedBy.email}</Text>
+                </View>
+              )}
               {/* Categories */}
               {c.categories?.length > 0 && (
                 <View style={styles.tagRow}>
@@ -249,6 +255,34 @@ export default function ComplaintsQueueScreen({ navigation }) {
               <View style={styles.descBox}>
                 <Text style={{ fontSize: 14, color: Colors.textMuted, lineHeight: 22 }}>{viewingComp?.description}</Text>
               </View>
+
+              {viewingComp?.submittedBy && (
+                <View style={styles.contactCard}>
+                  <View style={styles.contactHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.contactEyebrow}>STUDENT CONTACT</Text>
+                      <Text style={styles.contactName}>{viewingComp.submittedBy.name || 'Student'}</Text>
+                      <Text style={styles.contactSubtext}>Complaint submitted from this Gmail account</Text>
+                    </View>
+                    {viewingComp.submittedBy.collegeId ? (
+                      <View style={styles.collegeBadge}>
+                        <Ionicons name="school-outline" size={14} color={Colors.textMuted} />
+                        <Text style={styles.collegeBadgeText}>{viewingComp.submittedBy.collegeId}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {viewingComp.submittedBy.email ? (
+                    <View style={styles.contactEmailBox}>
+                      <Text style={styles.contactEmailLabel}>GMAIL ADDRESS</Text>
+                      <View style={styles.contactEmailRow}>
+                        <Ionicons name="mail" size={16} color={Colors.primary} />
+                        <Text style={styles.contactEmailText}>{viewingComp.submittedBy.email}</Text>
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+              )}
 
               {/* AI Reason */}
               {viewingComp?.aiReason && (
@@ -538,6 +572,8 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: 13, color: Colors.textMuted, marginBottom: 6, lineHeight: 20 },
   cardLocation: { fontSize: 12, color: Colors.textMuted, marginBottom: 4 },
   cardBy: { fontSize: 12, color: Colors.textMuted, marginBottom: 8 },
+  emailPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, backgroundColor: '#eff6ff', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 8, borderWidth: 1, borderColor: '#bfdbfe', maxWidth: '100%' },
+  emailPillText: { flexShrink: 1, fontSize: 12, color: Colors.primary, fontWeight: '700' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
   tag: { backgroundColor: '#f1f5f9', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   tagText: { fontSize: 10, color: '#475569', fontWeight: '700', textTransform: 'uppercase' },
@@ -624,6 +660,17 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 10, fontWeight: '800', color: Colors.textMuted, letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' },
   detailValue: { fontSize: 14, fontWeight: '800' },
   descBox: { backgroundColor: Colors.bg, borderRadius: 14, padding: 14, marginBottom: 14 },
+  contactCard: { backgroundColor: '#f8fbff', borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#dbeafe' },
+  contactHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
+  contactEyebrow: { fontSize: 10, fontWeight: '900', color: Colors.primary, letterSpacing: 1.2, marginBottom: 4 },
+  contactName: { fontSize: 17, fontWeight: '800', color: Colors.text, marginBottom: 2 },
+  contactSubtext: { fontSize: 12, color: Colors.textMuted, lineHeight: 18 },
+  collegeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1, borderColor: Colors.border },
+  collegeBadgeText: { fontSize: 11, color: Colors.text, fontWeight: '700' },
+  contactEmailBox: { backgroundColor: '#fff', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#dbeafe' },
+  contactEmailLabel: { fontSize: 10, fontWeight: '900', color: Colors.textMuted, letterSpacing: 1.1, marginBottom: 8 },
+  contactEmailRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  contactEmailText: { flex: 1, fontSize: 14, fontWeight: '700', color: Colors.text },
   aiBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#ddd6fe' },
   aiText: { flex: 1, fontSize: 12, color: '#7c3aed', fontStyle: 'italic' },
   sectionLabel: { fontSize: 13, fontWeight: '800', color: Colors.text, marginBottom: 10 },
