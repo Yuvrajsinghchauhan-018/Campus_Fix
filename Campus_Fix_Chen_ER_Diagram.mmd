@@ -1,0 +1,133 @@
+flowchart LR
+    %% Campus_Fix - Chen's Notation ER Diagram
+    %% Entities = rectangles, Attributes = ovals, Relationships = diamonds
+
+    %% =====================
+    %% Entities
+    %% =====================
+    USER[USER]
+    DEPARTMENT[DEPARTMENT]
+    COMPLAINT[COMPLAINT]
+    QR_NODE[QR_NODE]
+    ANNOUNCEMENT[ANNOUNCEMENT]
+    NOTIFICATION[NOTIFICATION]
+
+    %% =====================
+    %% USER Attributes
+    %% =====================
+    USER_ID([<u>ID</u>])
+    USER_Name([Name])
+    USER_Role([Role])
+    USER_CollegeID([CollegeID])
+    USER_Phone([Phone])
+
+    USER --- USER_ID
+    USER --- USER_Name
+    USER --- USER_Role
+    USER --- USER_CollegeID
+    USER --- USER_Phone
+
+    %% =====================
+    %% DEPARTMENT Attributes
+    %% =====================
+    DEPT_ID([<u>ID</u>])
+    DEPT_Name([Name])
+
+    DEPARTMENT --- DEPT_ID
+    DEPARTMENT --- DEPT_Name
+
+    %% =====================
+    %% COMPLAINT Attributes
+    %% =====================
+    COMPLAINT_ID([<u>ID</u>])
+    COMPLAINT_Title([Title])
+    COMPLAINT_Status([Status])
+    COMPLAINT_Priority([Priority])
+    COMPLAINT_Room([Room_Number])
+    COMPLAINT_AI_Priority([AI_Priority])
+    COMPLAINT_AI_Category([AI_Category])
+
+    COMPLAINT --- COMPLAINT_ID
+    COMPLAINT --- COMPLAINT_Title
+    COMPLAINT --- COMPLAINT_Status
+    COMPLAINT --- COMPLAINT_Priority
+    COMPLAINT --- COMPLAINT_Room
+    COMPLAINT --- COMPLAINT_AI_Priority
+    COMPLAINT --- COMPLAINT_AI_Category
+
+    %% =====================
+    %% QR_NODE Attributes
+    %% =====================
+    QR_ID([<u>ID</u>])
+    QR_Data([QR_Data])
+    QR_Room([Room_Number])
+
+    QR_NODE --- QR_ID
+    QR_NODE --- QR_Data
+    QR_NODE --- QR_Room
+
+    %% =====================
+    %% ANNOUNCEMENT Attributes
+    %% =====================
+    ANN_ID([<u>ID</u>])
+    ANN_Title([Title])
+
+    ANNOUNCEMENT --- ANN_ID
+    ANNOUNCEMENT --- ANN_Title
+
+    %% =====================
+    %% NOTIFICATION Attributes
+    %% =====================
+    NOTIF_ID([<u>ID</u>])
+    NOTIF_Message([Message])
+
+    NOTIFICATION --- NOTIF_ID
+    NOTIFICATION --- NOTIF_Message
+
+    %% =====================
+    %% Relationships
+    %% =====================
+    BELONGS_TO{"BELONGS TO"}
+    SUBMITS{"SUBMITS"}
+    ASSIGNED_TO{"ASSIGNED TO"}
+    ROUTED_TO{"ROUTED TO"}
+    SCANNED_FOR{"SCANNED FOR"}
+    POSTS{"POSTS"}
+    RECEIVES{"RECEIVES"}
+
+    USER -- "M" --- BELONGS_TO
+    BELONGS_TO -- "1" --- DEPARTMENT
+
+    USER -- "1" --- SUBMITS
+    SUBMITS -- "N" --- COMPLAINT
+
+    COMPLAINT -- "N" --- ASSIGNED_TO
+    ASSIGNED_TO -- "M" --- USER
+
+    COMPLAINT -- "N" --- ROUTED_TO
+    ROUTED_TO -- "1" --- DEPARTMENT
+
+    QR_NODE -- "1" --- SCANNED_FOR
+    SCANNED_FOR -- "N" --- COMPLAINT
+
+    USER -- "1" --- POSTS
+    POSTS -- "N" --- ANNOUNCEMENT
+
+    USER -- "1" --- RECEIVES
+    RECEIVES -- "N" --- NOTIFICATION
+
+    %% =====================
+    %% Styling
+    %% =====================
+    classDef entity fill:#ffffff,stroke:#111827,stroke-width:2px,color:#111827;
+    classDef attribute fill:#eef6ff,stroke:#2563eb,stroke-width:1.5px,color:#111827;
+    classDef relationship fill:#fff7ed,stroke:#ea580c,stroke-width:2px,color:#111827;
+
+    class USER,DEPARTMENT,COMPLAINT,QR_NODE,ANNOUNCEMENT,NOTIFICATION entity;
+    class USER_ID,USER_Name,USER_Role,USER_CollegeID,USER_Phone attribute;
+    class DEPT_ID,DEPT_Name attribute;
+    class COMPLAINT_ID,COMPLAINT_Title,COMPLAINT_Status,COMPLAINT_Priority,COMPLAINT_Room,COMPLAINT_AI_Priority,COMPLAINT_AI_Category attribute;
+    class QR_ID,QR_Data,QR_Room attribute;
+    class ANN_ID,ANN_Title attribute;
+    class NOTIF_ID,NOTIF_Message attribute;
+    class BELONGS_TO,SUBMITS,ASSIGNED_TO,ROUTED_TO,SCANNED_FOR,POSTS,RECEIVES relationship;
